@@ -11,8 +11,8 @@ def bert_model():
 	    #print(child, count)
 	    count += 1
 	    if count < 4:
-		for param in child.parameters():
-		    param.requires_grad = False
+	    	for param in child.parameters():
+	    		param.requires_grad = False
 
 	layers_token = list(model_token.children()) # Get all the layers from the Transformer model
 

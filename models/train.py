@@ -1,8 +1,24 @@
+import sys
+sys.path.append('../')
+
+import os
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import time
+import random
+
+from random import seed
+from torchvision import transforms
+from torch.utils.data import DataLoader
+from utils import process_data, accuracy
+
+
 ################################################################################################################################################################################################################
 ####################################################################### Model's Fit Function ###################################################################################################################
 ################################################################################################################################################################################################################
 
-def fit(epochs, model, train_dl, optimizer, lr_scheduler):
+def fit(epochs, model, train_dl, optimizer, lr_scheduler, batch_num):
     opt = optimizer
     sched = lr_scheduler
     loss_func = nn.CrossEntropyLoss()

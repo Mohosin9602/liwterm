@@ -12,7 +12,7 @@ import time
 
 # Merge the two models
 class model_final(nn.Module):
-    def __init__(self, model_trans_top, trans_layer_norm, dp_rate = 0.3):
+    def __init__(self, model_trans_top, trans_layer_norm, n_classes, dp_rate = 0.3):
         super().__init__()
         # All the trans model layers
         self.model_trans_top = model_trans_top
@@ -42,8 +42,6 @@ class model_final(nn.Module):
         self.linear1 = nn.Linear(4096, 2048)
         self.linear2 = nn.Linear(2048, 1024)
         self.linear3 = nn.Linear(1024, 512)
-        #to add classes, change 1 to n_classes
-        #self.linear2 = nn.Linear(500,1)
         self.linear4 = nn.Linear(512,n_classes)
 
     #change forward to match with Bert Model

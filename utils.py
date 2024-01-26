@@ -1,10 +1,13 @@
 import os
 import pandas as pd
 import numpy as np
+import torch
 
+from PIL import Image, ImageFile
 from datasets import Dataset
 from transformers import ViTFeatureExtractor, ViTImageProcessor, ViTModel, ViTConfig, AutoConfig, AutoTokenizer, AutoModel, BertModel, AutoModelForSequenceClassification, pipeline
 
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 ################################################################################################################################################################################################################
 ####################################################################### Dataloader #############################################################################################################################
@@ -182,7 +185,8 @@ def accuracy(predictions, labels):
     
 # Define optimizer and learning_rate scheduler
 
-def set_params():
+def set_params(model):
+	params = [param for param in list(model.parameters()) if param.requires_grad]
 	optimizer = torch.optim.SGD(params, lr=1e-3, momentum=0.2)
 	#optimizer = torch.optim.Adam(params, lr=1e-3)
 	lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
