@@ -1,1 +1,1 @@
-# TCNN_BE
+# Transfuse model (multimodal image + text using transformers)
