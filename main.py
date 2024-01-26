@@ -35,106 +35,11 @@ from random import seed
 import GPUtil
 # %matplotlib inline
 
+from utils import process_metadata_frame, customDataset, process_data, accuracy, set_params
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 print(os.getcwd())
 
-################################################################################################################################################################################################################
-####################################################################### Data Loading and Processing ############################################################################################################
-################################################################################################################################################################################################################
-
-def process_metadata_frame(df_meta):
-	#create the data frame
-	df = pd.DataFrame()
-	df["file_path"] = list(df_meta["img_id"])
-	for i in range(len(df)):
-		df.at[i,"file_path"] = str(df.iloc[i]["file_path"]).split(".")[0] + ".jpg"
-	df["text"] = "empty"
-	df["diagnostics"] = "UNK"
-	df["diagnostics_class"] = "UNK"	
-	
-	#metadata processing
-	df_meta.loc[df_meta["gender_FEMALE"] == 1, "gender_FEMALE"] = " The subject is a female."
-	df_meta.loc[df_meta["gender_FEMALE"] == 0, "gender_FEMALE"] = " The subject is a male. "
-
-	df_meta.loc[df_meta["skin_cancer_history_True"] == 1, "skin_cancer_history_True"] = " There is a skin cancer history."
-	df_meta.loc[df_meta["skin_cancer_history_True"] == 0, "skin_cancer_history_True"] = " There is no skin cancer history."
-
-	df_meta.loc[df_meta["cancer_history_True"] == 1, "cancer_history_True"] = " There is a cancer history."
-	df_meta.loc[df_meta["cancer_history_True"] == 0, "cancer_history_True"] = " There is no cancer history."
-
-
-	df_meta["fitspatrick_index"] = " No fitspatrick available."
-	for fits in ["fitspatrick_1.0", "fitspatrick_2.0", "fitspatrick_3.0", "fitspatrick_4.0", "fitspatrick_5.0", "fitspatrick_6.0"]:
-		for i in range(len(df_meta)):
-			if df_meta.at[i,fits] == 1:
-				df_meta.at[i,"fitspatrick_index"] = " " + fits
-				
-	df_meta["cancer_region"] = " No region available."		
-	for regs in ["region_ARM", "region_NECK", "region_FACE", "region_HAND", "region_FOREARM", "region_CHEST", "region_NOSE", "region_THIGH", "region_SCALP", "region_EAR", "region_BACK", "region_FOOT", "region_ABDOMEN", "region_LIP"]:
-		for i in range(len(df_meta)):
-			if df_meta.at[i,regs] == 1:
-				df_meta.at[i,"cancer_region"] = " Lesion located in the region of the " + regs.split("_")[1] + "."
-
-	df_meta.loc[df_meta["itch_True"] == 1, "itch_True"] = " The lesion itches."
-	df_meta.loc[df_meta["itch_True"] == 0, "itch_True"] = " The lesion does not itch."
-
-	df_meta.loc[df_meta["grew_True"] == 1, "grew_True"] = " The lesion has grown."
-	df_meta.loc[df_meta["grew_True"] == 0, "grew_True"] = " The lesion did not grow."
-
-	df_meta.loc[df_meta["hurt_True"] == 1, "hurt_True"] = " The lesion hurts."
-	df_meta.loc[df_meta["hurt_True"] == 0, "hurt_True"] = " The lesion does not hurt."
-
-	df_meta.loc[df_meta["changed_True"] == 1, "changed_True"] = " The lesion has changed over time."
-	df_meta.loc[df_meta["changed_True"] == 0, "changed_True"] = " The lesion did not change."
-
-	df_meta.loc[df_meta["bleed_True"] == 1, "bleed_True"] = " The lesion bleeds."
-	df_meta.loc[df_meta["bleed_True"] == 0, "bleed_True"] = " The lesion does not bleed."
-
-	df_meta.loc[df_meta["elevation_True"] == 1, "elevation_True"] = " The lesion presents elevation."
-	df_meta.loc[df_meta["elevation_True"] == 0, "elevation_True"] = " The lesion does not present elevation."
-	
-	#process the data frame
-	for i in range(len(df)):
-	  #print("patient_id: ",df.iloc[i]["file_path"].split('_')[1], "lesion_id: ", df.iloc[i]["file_path"].split('_')[2])
-	  for j in range(len(df_meta)):
-	    #print("meta_patient_id: " ,df_meta.iloc[j]["patient_id"].split('_')[1], "lesion_id: ", df.iloc[i]["file_path"].split('_')[2])
-	    if ((str(df.iloc[i]["file_path"].split('_')[1]) == str(df_meta.iloc[j]["patient_id"].split('_')[1])) and (str(df.iloc[i]["file_path"].split('_')[2]) == str(df_meta.iloc[j]["lesion_id"]))):
-	      #print("meta_patient_id: " ,df_meta.iloc[j]["patient_id"].split('_')[1], "meta_lesion_id: ", df_meta.iloc[i]["lesion_id"])
-	      df.at[i,"text"] = "Age of " + str(df_meta.iloc[j]["age"]) + "." + str(df_meta.iloc[j]["gender_FEMALE"]) + str(df_meta.iloc[j]["skin_cancer_history_True"]) + str(df_meta.iloc[j]["cancer_history_True"]) + str(df_meta.iloc[j]["fitspatrick_index"]) + str(df_meta.iloc[j]["cancer_region"]) + str(df_meta.iloc[j]["itch_True"]) + str(df_meta.iloc[j]["grew_True"]) + str(df_meta.iloc[j]["hurt_True"]) + str(df_meta.iloc[j]["changed_True"]) + str(df_meta.iloc[j]["bleed_True"]) + str(df_meta.iloc[j]["elevation_True"])
-	      df.at[i,"diagnostics"] = str(df_meta.iloc[j]["diagnostic"])
-	      df.at[i,"diagnostics_class"] = str(df_meta.iloc[j]["diagnostic"])
-	      
-	#set the diagnostics label
-	df.loc[df["diagnostics"] == "NEV", "diagnostics"] = 0
-	df.loc[df["diagnostics"] == "BCC", "diagnostics"] = 1
-	df.loc[df["diagnostics"] == "ACK", "diagnostics"] = 2
-	df.loc[df["diagnostics"] == "SEK", "diagnostics"] = 3
-	df.loc[df["diagnostics"] == "SCC", "diagnostics"] = 4
-	df.loc[df["diagnostics"] == "BOD", "diagnostics"] = 4
-	df.loc[df["diagnostics"] == "MEL", "diagnostics"] = 5   
-	
-	return(df, df_meta)  
-
-################################################################################################################################################################################################################
-####################################################################### Feature Extraction #####################################################################################################################
-################################################################################################################################################################################################################	
-
-feature_extractor_text = pipeline("feature-extraction",framework="pt",model="facebook/bart-base")
-tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
-trans_transform = ViTFeatureExtractor.from_pretrained('google/vit-large-patch16-224')
-
-def process_data(Dataset):
-  #getting the data
-  input_trans = (trans_transform([np.array(Image.open(x).convert('RGB')) for x in Dataset.dataset.images], return_tensors='pt'))['pixel_values'].squeeze()
-  #input_text = tokenizer(list(Dataset.dataset.text), padding=True, truncation=True, max_length = 25, return_tensors="pt")
-  l = []
-  input_text = list(feature_extractor_text(list(Dataset.dataset.text), return_tensors="pt"))
-  for i in range(len(input_text)):
-  	l.append(torch.from_numpy(input_text[i][0].numpy().mean(axis=0)))
-  yb = torch.tensor(Dataset.dataset.labels[:])
-  return(input_trans, torch.stack(l), yb)	
-		
 #Load training data
 files = os.listdir("data/imgs_1_2_3/")
 df_metadata = pd.read_csv("data/pad-ufes-20_parsed_folders_train.csv", header = 0, index_col = False)	
@@ -155,13 +60,14 @@ df_test["file_path"] = "data/imgs_1_2_3/" + df_test["file_path"]
 print(len(df_test.loc[df_test["text"] != "empty"]))
 print(df_test.loc[df_test["text"] != "empty"])
 
-
 classes = tuple(df["diagnostics_class"].unique())
 print(classes)
 n_classes = 6
 
 
 l = [df["text"][0], df["text"][1]]
+x = input()
+
 
 # Define training dataset
 

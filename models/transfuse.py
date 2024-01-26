@@ -26,8 +26,16 @@ class model_final(nn.Module):
         self.batchnorm4 = nn.BatchNorm1d(512)
         
         # All the text model
+        #by now, only the features are being added
         self.token_flatten = nn.Flatten()
         self.token_linear = nn.Linear(768, 2048)
+        
+        #to incorporate bert model
+        '''
+        self.model_token_top = model_token_top
+        self.token_flatten = nn.Flatten()
+        self.token_linear = nn.Linear(768, 2048)
+        '''
 
         # Merge the result and pass the
         self.dropout = nn.Dropout(dp_rate)
@@ -48,11 +56,20 @@ class model_final(nn.Module):
         result_trans = self.dropout(result_trans)
         result_trans = self.trans_linear(result_trans)
 
-        # Get intermediate outputs using hidden layer
-        
+        # Get text features
         result_token = self.token_flatten(token_b_input_feats)
         result_token = self.dropout(result_token)
         result_token = self.token_linear(result_token)
+        
+        #To incorporate features from bert model
+        '''
+         # Get intermediate outputs using hidden layer
+        result_token = self.model_token_top(token_b_input_ids, attention_mask=token_b_attention_masks)
+        patch_state = result_token.last_hidden_state[:,1,:] # Remove the classification token and get the last hidden state of all patchs
+        result_token = self.token_flatten(patch_state)
+        result_token = self.dropout(result_token)
+        result_token = self.token_linear(result_token)
+        '''
 
         result_merge = torch.cat((result_trans, result_token),1)
         result_merge = self.batchnorm1(result_merge)

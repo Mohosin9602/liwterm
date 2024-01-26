@@ -134,12 +134,15 @@ tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
 trans_transform = ViTFeatureExtractor.from_pretrained('google/vit-large-patch16-224')
 
 def process_data(Dataset):
-	#getting the data
-	input_trans = (trans_transform([np.array(Image.open(x).convert('RGB')) for x in Dataset.dataset.images], return_tensors='pt'))['pixel_values'].squeeze()
-	#input_text = tokenizer(list(Dataset.dataset.text), padding=True, truncation=True, max_length = 25, return_tensors="pt")
-	input_text = tokenizer(list(Dataset.dataset.text), padding=True, truncation=True, return_tensors="pt")
-	yb = torch.tensor(Dataset.dataset.labels[:])
-	return(input_trans, input_text, yb)
+  #getting the data
+  input_trans = (trans_transform([np.array(Image.open(x).convert('RGB')) for x in Dataset.dataset.images], return_tensors='pt'))['pixel_values'].squeeze()
+  #input_text = tokenizer(list(Dataset.dataset.text), padding=True, truncation=True, max_length = 25, return_tensors="pt")
+  l = []
+  input_text = list(feature_extractor_text(list(Dataset.dataset.text), return_tensors="pt"))
+  for i in range(len(input_text)):
+  	l.append(torch.from_numpy(input_text[i][0].numpy().mean(axis=0)))
+  yb = torch.tensor(Dataset.dataset.labels[:])
+  return(input_trans, torch.stack(l), yb)	
 	
 ################################################################################################################################################################################################################
 ####################################################################### Add Data/Model to GPU ##################################################################################################################
