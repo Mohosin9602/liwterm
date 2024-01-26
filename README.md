@@ -12,6 +12,8 @@ Currently, you have to extract all the files from [PAD-UFES-20](https://data.men
 ## :trollface: Relevant Information
 Right now, the `__getitem__` function from the `customDataloader` class is unavailable. Due to the intense and computational-cost processes of computing ViT and text (Bert) features, this function presented unexpected behavior, harming its use. Its implementations is under progress.
 
-Hence, the features are calculated for the entire training and test sets and the batches for each training-epoch are manually calculated (please check the `fit`function inside `models/trainig.py`). Once the `__getitem__` implementation is finished, the use automatic batch selection from `DataLoader` class will be employed, updating the current batch selection.
+Hence, the features are calculated for the entire training and test sets and the batches for each training-epoch are manually calculated (please check the `fit` function inside `models/trainig.py`). Once the `__getitem__` implementation is finished, the use automatic batch selection from `DataLoader` class will be employed, updating the current batch selection.
+
+After setting up the environment and storing (properly) the data, all you have to do is run the `main.py` file.
 
 Finally, a folder named `sample_data/checkpoints` will be created with the final model inside, after the training process is finished. You can load the model for further inference. 
