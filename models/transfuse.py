@@ -19,7 +19,8 @@ class model_final(nn.Module):
         self.trans_layer_norm = trans_layer_norm
         self.trans_flatten = nn.Flatten()
         self.relu = nn.ReLU()
-        self.trans_linear = nn.Linear(150528, 2048)
+        self.trans_linear = nn.Linear(150528, 4096)
+        self.batchnorm0 = nn.BatchNorm1d(4864)
         self.batchnorm1 = nn.BatchNorm1d(4096)
         self.batchnorm2 = nn.BatchNorm1d(2048)
         self.batchnorm3 = nn.BatchNorm1d(1024)
@@ -28,7 +29,8 @@ class model_final(nn.Module):
         # All the text model
         #by now, only the features are being added
         self.token_flatten = nn.Flatten()
-        self.token_linear = nn.Linear(768, 2048)
+        self.token_layer_norm = nn.LayerNorm(768)
+        self.token_linear = nn.Linear(768, 1024)
         
         #to incorporate bert model
         '''
@@ -39,7 +41,8 @@ class model_final(nn.Module):
 
         # Merge the result and pass the
         self.dropout = nn.Dropout(dp_rate)
-        self.linear1 = nn.Linear(4096, 2048)
+        #self.linear0 = nn.Linear(5960, 4096)
+        self.linear1 = nn.Linear(4864, 2048)
         self.linear2 = nn.Linear(2048, 1024)
         self.linear3 = nn.Linear(1024, 512)
         self.linear4 = nn.Linear(512,n_classes)
@@ -56,8 +59,9 @@ class model_final(nn.Module):
 
         # Get text features
         result_token = self.token_flatten(token_b_input_feats)
-        result_token = self.dropout(result_token)
-        result_token = self.token_linear(result_token)
+        result_token = self.token_layer_norm(result_token)
+        #result_token = self.dropout(result_token)
+        #result_token = self.token_linear(result_token)
         
         #To incorporate features from bert model
         '''
@@ -70,24 +74,28 @@ class model_final(nn.Module):
         '''
 
         result_merge = torch.cat((result_trans, result_token),1)
-        result_merge = self.batchnorm1(result_merge)
-        result_merge = self.relu(result_merge)
         result_merge = self.dropout(result_merge)
+        result_merge = self.relu(result_merge)
+        result_merge = self.batchnorm0(result_merge)
 
+        #result_merge = self.linear0(result_merge)
+        #result_merge = self.batchnorm1(result_merge)
+        #result_merge = self.dropout(result_merge)
+        #result_merge = self.relu(result_merge)
+        
         result_merge = self.linear1(result_merge)
         result_merge = self.batchnorm2(result_merge)
-        result_merge = self.relu(result_merge)
         result_merge = self.dropout(result_merge)
+        result_merge = self.relu(result_merge)
         
         result_merge = self.linear2(result_merge)
         result_merge = self.batchnorm3(result_merge)
-        result_merge = self.relu(result_merge)
         result_merge = self.dropout(result_merge)
+        result_merge = self.relu(result_merge)
         
         result_merge = self.linear3(result_merge)
         result_merge = self.batchnorm4(result_merge)
         result_merge = self.relu(result_merge)
-        result_merge = self.dropout(result_merge)
         
         result_merge = self.linear4(result_merge)        
 
