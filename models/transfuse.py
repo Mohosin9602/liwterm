@@ -25,6 +25,7 @@ class model_final(nn.Module):
         self.batchnorm2 = nn.BatchNorm1d(2048)
         self.batchnorm3 = nn.BatchNorm1d(1024)
         self.batchnorm4 = nn.BatchNorm1d(512)
+        self.batchnorm5 = nn.BatchNorm1d(256)
         
         # All the text model
         #by now, only the features are being added
@@ -45,7 +46,8 @@ class model_final(nn.Module):
         self.linear1 = nn.Linear(4864, 2048)
         self.linear2 = nn.Linear(2048, 1024)
         self.linear3 = nn.Linear(1024, 512)
-        self.linear4 = nn.Linear(512,n_classes)
+        self.linear4 = nn.Linear(512, 256)
+        self.linear5 = nn.Linear(256, n_classes)
 
     #change forward to match with Bert Model
     def forward(self, trans_b, token_b_input_feats):
@@ -97,7 +99,11 @@ class model_final(nn.Module):
         result_merge = self.batchnorm4(result_merge)
         result_merge = self.relu(result_merge)
         
-        result_merge = self.linear4(result_merge)        
+        result_merge = self.linear4(result_merge)
+        result_merge = self.batchnorm5(result_merge)
+        result_merge = self.relu(result_merge)
+        
+        result_merge = self.linerar5(result_merge)        
 
         return result_merge
 
