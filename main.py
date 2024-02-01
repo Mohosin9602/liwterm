@@ -83,7 +83,7 @@ print(model)
 optimizer, lr_scheduler = set_params(model)
 
 #Training the model and save the weights
-fit(60, model, train_dl, optimizer, lr_scheduler, batch_size)
+fit(80, model, train_dl, optimizer, lr_scheduler, batch_size)
 
 #for loading the saved model model loading
 #model_load = model_final(model_trans_top, trans_layer_norm, dp_rate = 0.15)

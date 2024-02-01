@@ -193,7 +193,7 @@ def set_params(model):
 	    optimizer,
 	    mode='min',
 	    factor=0.1,
-	    patience=3,
+	    patience=4,
 	    min_lr = 1e-6,
 	    verbose=True)
 	return(optimizer, lr_scheduler)

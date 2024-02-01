@@ -48,6 +48,7 @@ class model_final(nn.Module):
         self.linear3 = nn.Linear(1024, 512)
         self.linear4 = nn.Linear(512, 256)
         self.linear5 = nn.Linear(256, n_classes)
+        self.softmax = nn.Softmax(dim=1)
 
     #change forward to match with Bert Model
     def forward(self, trans_b, token_b_input_feats):
@@ -104,6 +105,7 @@ class model_final(nn.Module):
         result_merge = self.relu(result_merge)
         
         result_merge = self.linerar5(result_merge)        
+        result_merge = self.softmax(result_merge)
 
         return result_merge
 
