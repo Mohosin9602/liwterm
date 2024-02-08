@@ -104,8 +104,8 @@ class model_final(nn.Module):
         result_merge = self.batchnorm5(result_merge)
         result_merge = self.relu(result_merge)
         
-        result_merge = self.linerar5(result_merge)        
-        result_merge = self.softmax(result_merge)
+        result_merge = self.linear5(result_merge)        
+        #result_merge = self.softmax(result_merge)
 
         return result_merge
 
