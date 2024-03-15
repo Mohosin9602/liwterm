@@ -2,10 +2,28 @@ import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from utils import process_data, accuracy
+
+################################################################################################################################################################################################################
+####################################################################### Confusion Matrix #######################################################################################################################
+################################################################################################################################################################################################################
+
+def plot_confusion_matrix(df_confusion, title='Confusion matrix', cmap=plt.cm.gray_r):
+    plt.matshow(df_confusion, cmap=cmap) # imshow
+    #plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(df_confusion.columns))
+    plt.xticks(tick_marks, df_confusion.columns, rotation=45)
+    plt.yticks(tick_marks, df_confusion.index)
+    #plt.tight_layout()
+    plt.ylabel(df_confusion.index.name)
+    plt.xlabel(df_confusion.columns.name)
 
 ################################################################################################################################################################################################################
 ####################################################################### Model's Test Functions #################################################################################################################
@@ -45,6 +63,8 @@ def test_partial(model, test_data, batch_num):
         test_loss = loss_func(output,l_target)
         acc = accuracy(output,l_target)
         print("\nTest set: batch: {}, Accuracy: {}; Loss: {}\n".format(batches, acc, test_loss))
+        df_confusion = pd.crosstab(l_target, output)
+        plot_confusion_matrix(df_confusion)
 
 
 def test(model, test_dl):
