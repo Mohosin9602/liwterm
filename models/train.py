@@ -46,7 +46,8 @@ def fit(epochs, model, train_dl, optimizer, lr_scheduler, batch_num):
         n_batches = int(int(label.size(dim=0))/batch_num)
         
         #number of batches
-        for batches in range(int(int(label.size(dim=0))/batch_num)):
+        #for batches in range(int(int(label.size(dim=0))/batch_num)):
+        for batches in range(2):    
 
             l_batches = []
             seed(time.perf_counter())

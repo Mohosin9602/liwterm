@@ -34,7 +34,8 @@ def test_partial(model, test_data, batch_num):
     test_loss = 0
     correct = 0
     loss_func = nn.CrossEntropyLoss()
-
+    out_labels = []
+    out_preds = []
     with torch.no_grad():
 
       image_input,text_input,target = process_data(test_data)
@@ -62,9 +63,11 @@ def test_partial(model, test_data, batch_num):
         #pred = output.argmax(1, keepdim=True)
         test_loss = loss_func(output,l_target)
         acc = accuracy(output,l_target)
+        out_preds.append(t for t in output.squeeze().tolist())
+        out_labels.append(t for t in l_target.squeeze().tolist())
         print("\nTest set: batch: {}, Accuracy: {}; Loss: {}\n".format(batches, acc, test_loss))
-        df_confusion = pd.crosstab(l_target, output)
-        plot_confusion_matrix(df_confusion)
+      df_confusion = pd.crosstab(out_labels, out_preds)
+      plot_confusion_matrix(df_confusion)
 
 
 def test(model, test_dl):

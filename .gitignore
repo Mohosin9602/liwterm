@@ -1,2 +1,4 @@
 /data/imgs_1_2_3/
 *.pt
+__pycache__/
+models/__pycache__/

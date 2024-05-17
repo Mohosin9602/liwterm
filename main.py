@@ -29,6 +29,7 @@ batch_size = 24
 
 #n_classes
 n_classes = 6
+folder = 1
 
 #ViT Feature Transformation version
 trans_version = 'google/vit-large-patch16-224'
@@ -54,8 +55,18 @@ df_test["file_path"] = "data/imgs_1_2_3/" + df_test["file_path"]
 print(len(df_test.loc[df_test["text"] != "empty"]))
 print(df_test.loc[df_test["text"] != "empty"])
 
+#folder filtering
+#TODO use only train folders - validation file is only for testing (folder == 6)
+df = df.loc[df["folder"] == folder]
+df_test = df_test.loc[df_test["folder"] == folder]
+df = df.drop("folder", axis=1)
+df_test = df_test.drop("folder", axis=1)
+
 classes = tuple(df["diagnostics_class"].unique())
 print(classes)
+
+print(df)
+print(len(df))
 
 #Loaders definition
 #This transformation is required for the data loading and dataloader creation
@@ -65,7 +76,7 @@ train_ds = customDataset(df, trans_transform=trans_transform)
 train_dl = DataLoader(train_ds, batch_size=16, shuffle=True)
 
 test_ds = customDataset(df_test, trans_transform=trans_transform)
-test_dl = DataLoader(test_ds, batch_size=batch_size, shuffle=True)
+test_dl = DataLoader(test_ds, batch_size=16, shuffle=True)
 
 print(test_dl.dataset.labels)
 
@@ -83,7 +94,7 @@ print(model)
 optimizer, lr_scheduler = set_params(model)
 
 #Training the model and save the weights
-fit(65, model, train_dl, optimizer, lr_scheduler, batch_size)
+fit(1, model, train_dl, optimizer, lr_scheduler, batch_size)
 
 #for loading the saved model model loading
 #model_load = model_final(model_trans_top, trans_layer_norm, dp_rate = 0.15)
