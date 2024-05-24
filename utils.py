@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import torch
+import tiktoken
 
 from PIL import Image, ImageFile
 from datasets import Dataset
@@ -134,8 +135,9 @@ def process_metadata_frame(df_meta):
  
 
 feature_extractor_text = pipeline("feature-extraction",framework="pt",model="facebook/bart-base")
-tokenizer = AutoTokenizer.from_pretrained("bert-base-cased")
+tokenizer = AutoTokenizer.from_pretrained("BEE-spoke-data/cl100k_base-mlm")
 trans_transform = ViTFeatureExtractor.from_pretrained('google/vit-large-patch16-224')
+tiktokenizer = tiktoken.get_encoding("cl100k_base")
 
 def process_data(Dataset):
   #getting the data
@@ -145,9 +147,24 @@ def process_data(Dataset):
   input_text = list(feature_extractor_text(list(Dataset.dataset.text), return_tensors="pt"))
   for i in range(len(input_text)):
   	l.append(torch.from_numpy(input_text[i][0].numpy().mean(axis=0)))
-  yb = torch.tensor(Dataset.dataset.labels[:])
+  yb = torch.tensor((Dataset.dataset.labels[:]).to_numpy(dtype=np.float64))
   return(input_trans, torch.stack(l), yb)	
-	
+
+def process_data_2(Dataset):
+  #getting the data
+  input_trans = (trans_transform([np.array(Image.open(x).convert('RGB')) for x in Dataset.dataset.images], return_tensors='pt'))['pixel_values'].squeeze()
+  #input_text = tokenizer(list(Dataset.dataset.text), padding=True, truncation=True, max_length = 25, return_tensors="pt")
+  l = []
+  l_input_text = list(Dataset.dataset.text)
+  for i in l_input_text:
+       tokens = list(tiktokenizer.encode(i))
+       while len(tokens) < 90:
+            tokens.append(0)
+       l.append(torch.tensor(tokens).bfloat16())		
+    	     
+  yb = torch.tensor((Dataset.dataset.labels[:]).to_numpy(dtype=np.float64))
+  return(input_trans, torch.stack(l), yb)
+
 ################################################################################################################################################################################################################
 ####################################################################### Add Data/Model to GPU ##################################################################################################################
 ################################################################################################################################################################################################################

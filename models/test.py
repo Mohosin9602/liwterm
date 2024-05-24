@@ -8,7 +8,7 @@ import pandas as pd
 
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from utils import process_data, accuracy
+from utils import process_data, process_data_2, accuracy
 
 ################################################################################################################################################################################################################
 ####################################################################### Confusion Matrix #######################################################################################################################
@@ -25,11 +25,14 @@ def plot_confusion_matrix(df_confusion, title='Confusion matrix', cmap=plt.cm.gr
     plt.ylabel(df_confusion.index.name)
     plt.xlabel(df_confusion.columns.name)
 
+    plt.show()
+
 ################################################################################################################################################################################################################
 ####################################################################### Model's Test Functions #################################################################################################################
 ################################################################################################################################################################################################################
     
 def test_partial(model, test_data, batch_num):
+    #_COVERSION = {"": ""}
     model.eval()
     test_loss = 0
     correct = 0
@@ -38,8 +41,8 @@ def test_partial(model, test_data, batch_num):
     out_preds = []
     with torch.no_grad():
 
-      image_input,text_input,target = process_data(test_data)
-
+      image_input,text_input,target = process_data_2(test_data)
+      overall_acc = 0
       n_batches = int(int(target.size(dim=0))/batch_num)
       print("\n N of batches = {}\n".format(n_batches))
 
@@ -59,14 +62,22 @@ def test_partial(model, test_data, batch_num):
         l_text_input_ids = torch.stack(l_text_input_ids)
         l_target = torch.stack(l_target)
 
-        output = model(l_image_input, l_text_input_ids)
+        output = model(l_image_input, l_text_input_ids.to(torch.float32))
         #pred = output.argmax(1, keepdim=True)
         test_loss = loss_func(output,l_target)
         acc = accuracy(output,l_target)
-        out_preds.append(t for t in output.squeeze().tolist())
-        out_labels.append(t for t in l_target.squeeze().tolist())
+        overall_acc += float(acc)
+        #print(torch.argmax(output, dim=1).squeeze().tolist())
+        #print(l_target.squeeze().tolist())
+        out_preds += torch.argmax(output, dim=1).squeeze().tolist()
+        out_labels += l_target.squeeze().tolist()
         print("\nTest set: batch: {}, Accuracy: {}; Loss: {}\n".format(batches, acc, test_loss))
-      df_confusion = pd.crosstab(out_labels, out_preds)
+      #print("Preds: ", len(out_preds))
+      #print("Labels: ", len(out_labels))
+      overall_acc/= int(int(target.size(dim=0))/batch_num)
+      print("Overall Accuracy: ", overall_acc)
+      df_confusion = pd.crosstab(out_preds, out_labels)
+      print(df_confusion)
       plot_confusion_matrix(df_confusion)
 
 

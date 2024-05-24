@@ -11,7 +11,7 @@ import random
 from random import seed
 from torchvision import transforms
 from torch.utils.data import DataLoader
-from utils import process_data, accuracy
+from utils import process_data, process_data_2, accuracy
 
 
 ################################################################################################################################################################################################################
@@ -27,7 +27,7 @@ def fit(epochs, model, train_dl, optimizer, lr_scheduler, batch_num):
     path = "sample_data/checkpoints/" # user_defined path to save model
     
     print("Calculating the features...")
-    image_input,text_input,label = process_data(train_dl)
+    image_input,text_input,label = process_data_2(train_dl)
     
     print("Feature sizes: ViT({}); pipeline({}); labels({}).".format(image_input.size(), text_input.size(), label.size()))
     
@@ -44,11 +44,11 @@ def fit(epochs, model, train_dl, optimizer, lr_scheduler, batch_num):
         
         label = label.long()
         n_batches = int(int(label.size(dim=0))/batch_num)
-        
-        #number of batches
-        #for batches in range(int(int(label.size(dim=0))/batch_num)):
-        for batches in range(2):    
+        penalty = 0.001
 
+        #number of batches
+        for batches in range(int(int(label.size(dim=0))/batch_num)):
+        #for batches in range(2):    
             l_batches = []
             seed(time.perf_counter())
             for j in range(batch_num):
@@ -69,9 +69,31 @@ def fit(epochs, model, train_dl, optimizer, lr_scheduler, batch_num):
             l_labels = torch.stack(l_labels)
 
             
-            preds = model(l_image_input, l_text_input_ids)
-            
+            preds = model(l_image_input, l_text_input_ids.to(torch.float32))
             loss = loss_func(preds,l_labels)
+
+            out_preds = torch.argmax(preds, dim=1).squeeze().tolist()
+            out_labels = l_labels.squeeze().tolist()
+            '''
+            #verifying if the gradient punishing is required (only for class 5 misclassification)
+            dg_punish = 0
+            for i in range(len(out_labels)):
+               if out_labels[i] == 5 and out_preds[i] != 5:
+                  dg_punish = 1
+                  break
+
+            # This is where the activation gradients are computed
+            # But it makes clear that we're *only* interested in the activation gradients at this point
+            if dg_punish:
+              grads = torch.autograd.grad(loss, [model.relu1, model.relu2, model.relu3, model.relu4, model.relu5, model.softmaxact], create_graph=True, only_inputs=True)
+              grad_norm = 0
+              for grad in grads:
+                #L2 penalty
+                grad_norm += grad.pow(2).sum()
+              print("grad_nomr: ",grad_norm)
+              #TODO check if class 5 was mispredicted, and then apply the gradient penalty
+              loss = loss + grad_norm * penalty
+            '''
             loss.backward()
             opt.step()
             opt.zero_grad()

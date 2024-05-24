@@ -37,7 +37,8 @@ vit_weights_version = 'google/vit-base-patch16-224-in21k'
 
 #Load training data
 files = os.listdir("data/imgs_1_2_3/")
-df_metadata = pd.read_csv("data/pad-ufes-20_parsed_folders_train.csv", header = 0, index_col = False)	
+#df_metadata = pd.read_csv("data/pad-ufes-20_parsed_folders_train.csv", header = 0, index_col = False)	
+df_metadata = pd.read_csv("data/pad-ufes-20_parsed_test.csv", header = 0, index_col = False)
 df_metadata_test = pd.read_csv("data/pad-ufes-20_parsed_test.csv", header = 0, index_col = False)
 
 df,df_metadata = process_metadata_frame(df_metadata)
@@ -57,10 +58,10 @@ print(df_test.loc[df_test["text"] != "empty"])
 
 #folder filtering
 #TODO use only train folders - validation file is only for testing (folder == 6)
-df = df.loc[df["folder"] == folder]
-df_test = df_test.loc[df_test["folder"] == folder]
-df = df.drop("folder", axis=1)
-df_test = df_test.drop("folder", axis=1)
+#df = df.loc[df["folder"] == folder]
+#df_test = df_test.loc[df_test["folder"] == 6]
+#df = df.drop("folder", axis=1)
+#df_test = df_test.drop("folder", axis=1)
 
 classes = tuple(df["diagnostics_class"].unique())
 print(classes)
@@ -94,7 +95,7 @@ print(model)
 optimizer, lr_scheduler = set_params(model)
 
 #Training the model and save the weights
-fit(1, model, train_dl, optimizer, lr_scheduler, batch_size)
+fit(65, model, train_dl, optimizer, lr_scheduler, batch_size)
 
 #for loading the saved model model loading
 #model_load = model_final(model_trans_top, trans_layer_norm, dp_rate = 0.15)
