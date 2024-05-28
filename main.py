@@ -37,8 +37,8 @@ vit_weights_version = 'google/vit-base-patch16-224-in21k'
 
 #Load training data
 files = os.listdir("data/imgs_1_2_3/")
-#df_metadata = pd.read_csv("data/pad-ufes-20_parsed_folders_train.csv", header = 0, index_col = False)	
-df_metadata = pd.read_csv("data/pad-ufes-20_parsed_test.csv", header = 0, index_col = False)
+df_metadata = pd.read_csv("data/pad-ufes-20_parsed_folders_train.csv", header = 0, index_col = False)	
+#df_metadata = pd.read_csv("data/pad-ufes-20_parsed_test.csv", header = 0, index_col = False)
 df_metadata_test = pd.read_csv("data/pad-ufes-20_parsed_test.csv", header = 0, index_col = False)
 
 df,df_metadata = process_metadata_frame(df_metadata)

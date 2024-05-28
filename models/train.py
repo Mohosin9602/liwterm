@@ -27,7 +27,7 @@ def fit(epochs, model, train_dl, optimizer, lr_scheduler, batch_num):
     path = "sample_data/checkpoints/" # user_defined path to save model
     
     print("Calculating the features...")
-    image_input,text_input,label = process_data_2(train_dl)
+    image_input,text_input,label = process_data(train_dl)
     
     print("Feature sizes: ViT({}); pipeline({}); labels({}).".format(image_input.size(), text_input.size(), label.size()))
     

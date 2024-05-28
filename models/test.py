@@ -41,7 +41,7 @@ def test_partial(model, test_data, batch_num):
     out_preds = []
     with torch.no_grad():
 
-      image_input,text_input,target = process_data_2(test_data)
+      image_input,text_input,target = process_data(test_data)
       overall_acc = 0
       n_batches = int(int(target.size(dim=0))/batch_num)
       print("\n N of batches = {}\n".format(n_batches))
@@ -76,6 +76,8 @@ def test_partial(model, test_data, batch_num):
       #print("Labels: ", len(out_labels))
       overall_acc/= int(int(target.size(dim=0))/batch_num)
       print("Overall Accuracy: ", overall_acc)
+      print("Test Labels: ", out_labels)
+      print("Test Predictions: ", out_preds)
       df_confusion = pd.crosstab(out_preds, out_labels)
       print(df_confusion)
       plot_confusion_matrix(df_confusion)

@@ -59,9 +59,9 @@ def process_metadata_frame(df_meta):
 	#create the data frame
 	df = pd.DataFrame()
 	df["file_path"] = list(df_meta["img_id"])
-	df["folder"] = list(df_meta["folder"])
+	#df["folder"] = list(df_meta["folder"])
 	for i in range(len(df)):
-		df.at[i,"file_path"] = str(df.iloc[i]["file_path"]).split(".")[0] + ".jpg"
+		df.at[i,"file_path"] = str(df.iloc[i]["file_path"]).split(".")[0] + ".png"
 	df["text"] = "empty"
 	df["diagnostics"] = "UNK"
 	df["diagnostics_class"] = "UNK"	
