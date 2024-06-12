@@ -59,7 +59,7 @@ print(df_test.loc[df_test["text"] != "empty"])
 
 #folder filtering
 #TODO use only train folders - validation file is only for testing (folder == 6)
-df = df.loc[(df.folder == 1) | (df.folder == 2), :]
+df = df.loc[(df.folder == 1), :]
 df_test = df_test.loc[df_test["folder"] == 6]
 df = df.drop("folder", axis=1)
 df_test = df_test.drop("folder", axis=1)
@@ -69,8 +69,6 @@ print(classes)
 
 print(df)
 print(len(df))
-
-exit()
 
 #Loaders definition
 #This transformation is required for the data loading and dataloader creation
