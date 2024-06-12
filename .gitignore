@@ -1,4 +1,5 @@
 /data/imgs_1_2_3/
+/data/ISIC19/imgs/
 *.pt
 __pycache__/
 models/__pycache__/

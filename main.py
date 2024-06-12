@@ -14,7 +14,7 @@ import torch
 from transformers import ViTFeatureExtractor, ViTImageProcessor, ViTModel, ViTConfig
 from torch.utils.data import DataLoader
 from datasets import Dataset
-from utils import process_metadata_frame, customDataset, process_data, set_params
+from utils import process_metadata_frame, customDataset, process_data, set_params, process_metadata_frame_isic
 from models.vit import vit_model
 from models.bert import bert_model
 from models.transfuse import model_final
@@ -36,38 +36,41 @@ trans_version = 'google/vit-large-patch16-224'
 vit_weights_version = 'google/vit-base-patch16-224-in21k'
 
 #Load training data
-files = os.listdir("data/imgs_1_2_3/")
-df_metadata = pd.read_csv("data/pad-ufes-20_parsed_folders_train.csv", header = 0, index_col = False)	
+files = os.listdir("data/ISIC19/imgs/")
+df_metadata = pd.read_csv("data/ISIC19/isic19_parsed_folders.csv", header = 0, index_col = False)	
 #df_metadata = pd.read_csv("data/pad-ufes-20_parsed_test.csv", header = 0, index_col = False)
-df_metadata_test = pd.read_csv("data/pad-ufes-20_parsed_test.csv", header = 0, index_col = False)
+df_metadata_test = pd.read_csv("data/ISIC19/isic19_parsed_test.csv", header = 0, index_col = False)
 
-df,df_metadata = process_metadata_frame(df_metadata)
-df["file_path"] = "data/imgs_1_2_3/" + df["file_path"]
+df = process_metadata_frame_isic(df_metadata)
+df["file_path"] = "data/ISIC19/imgs/" + df["file_path"]
 
 print(len(df.loc[df["text"] != "empty"]))
 print(df.loc[df["text"] != "empty"])
 
-#Load Validation data
-files_test = os.listdir("data/imgs_1_2_3/")
 
-df_test,df_metadata_test = process_metadata_frame(df_metadata_test)
-df_test["file_path"] = "data/imgs_1_2_3/" + df_test["file_path"]
+#Load Validation data
+files_test = os.listdir("data/ISIC19/imgs/")
+
+df_test = process_metadata_frame_isic(df_metadata_test)
+df_test["file_path"] = "data/ISIC19/imgs/" + df_test["file_path"]
 
 print(len(df_test.loc[df_test["text"] != "empty"]))
 print(df_test.loc[df_test["text"] != "empty"])
 
 #folder filtering
 #TODO use only train folders - validation file is only for testing (folder == 6)
-#df = df.loc[df["folder"] == folder]
-#df_test = df_test.loc[df_test["folder"] == 6]
-#df = df.drop("folder", axis=1)
-#df_test = df_test.drop("folder", axis=1)
+df = df.loc[(df.folder == 1) | (df.folder == 2), :]
+df_test = df_test.loc[df_test["folder"] == 6]
+df = df.drop("folder", axis=1)
+df_test = df_test.drop("folder", axis=1)
 
 classes = tuple(df["diagnostics_class"].unique())
 print(classes)
 
 print(df)
 print(len(df))
+
+exit()
 
 #Loaders definition
 #This transformation is required for the data loading and dataloader creation

@@ -53,7 +53,8 @@ class customDataset(Dataset):
 ################################################################################################################################################################################################################
 ####################################################################### Data Processing ########################################################################################################################
 ################################################################################################################################################################################################################
- 
+
+# PAD-UFES-20 Processing 
 
 def process_metadata_frame(df_meta):
 	#create the data frame
@@ -128,6 +129,62 @@ def process_metadata_frame(df_meta):
 	df.loc[df["diagnostics"] == "MEL", "diagnostics"] = 5   
 	
 	return(df, df_meta)  
+
+# ISIC19 Processing
+
+def process_metadata_frame_isic(df_meta):
+	#create the data frame
+	df = pd.DataFrame()
+	df["file_path"] = list(df_meta["img_id"])
+	df["folder"] = list(df_meta["folder"])
+	for i in range(len(df)):
+		df.at[i,"file_path"] = str(df.iloc[i]["file_path"]) + ".jpg"
+	df["text"] = "empty"
+	df["diagnostics_class"] = df_meta["diagnostic"]
+	df["age"] = df_meta["age"]
+	df["diagnostics"] = "UNK"
+     
+	for regs in ["region_anterior torso", "region_upper extremity", "region_posterior torso", "region_lower extremity", "region_lateral torso", "region_head/neck", "region_palms/soles", "region_oral/genital"]:
+		df[regs] = df_meta[regs]
+          
+	for genders in ["gender_male", "gender_female"]:
+		df[genders] = df_meta[regs]
+
+	df["region"] = " No region available."		
+	for regs in ["region_anterior torso", "region_upper extremity", "region_posterior torso", "region_lower extremity", "region_lateral torso", "region_head/neck", "region_palms/soles", "region_oral/genital"]:
+		for i in range(len(df)):
+			if df.at[i,regs] == 1:
+				df.at[i,"region"] = " Lesion located in the region of the " + regs.split("_")[1] + "."
+ 
+
+	for i in range(len(df)):
+            if df.iloc[i, df.columns.get_loc("gender_female")] == 0 and df.iloc[i, df.columns.get_loc("gender_male")] == 1:
+                 gender =  " The subject is a male."
+            elif df.iloc[i, df.columns.get_loc("gender_female")] == 1 and df.iloc[i, df.columns.get_loc("gender_male")] == 0:
+                 gender =  " The subject is a female."
+            else:
+                 gender =  " No gender available."
+            if (df.iloc[i, df.columns.get_loc("age")]) == 0:
+                 age = "Age not available."
+            else:
+                 age = "Age of " + str(int(df.iloc[i]["age"])) + "."
+            df.at[i,"text"] = age + str(df.iloc[i, df.columns.get_loc("region")]) + gender
+	      
+	#set the diagnostics label
+	df.loc[df["diagnostics"] == "MEL", "diagnostics"] = 0
+	df.loc[df["diagnostics"] == "NV", "diagnostics"] = 1
+	df.loc[df["diagnostics"] == "BCC", "diagnostics"] = 2
+	df.loc[df["diagnostics"] == "AK", "diagnostics"] = 3
+	df.loc[df["diagnostics"] == "BKL", "diagnostics"] = 4
+	df.loc[df["diagnostics"] == "DF", "diagnostics"] = 5
+	df.loc[df["diagnostics"] == "VASC", "diagnostics"] = 6
+	df.loc[df["diagnostics"] == "SCC", "diagnostics"] = 7
+	df.loc[df["diagnostics"] == "UNK", "diagnostics"] = 8
+
+	df = df.drop(columns=["region_anterior torso", "region_upper extremity", "region_posterior torso", "region_lower extremity", "region_lateral torso", "region_head/neck", "region_palms/soles", "region_oral/genital", "age", "gender_female", "gender_male"])
+	
+	return(df)  
+
 
 ################################################################################################################################################################################################################
 ####################################################################### Feature Calculation ####################################################################################################################
