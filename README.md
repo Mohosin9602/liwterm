@@ -14,6 +14,6 @@ Right now, the `__getitem__` function from the `customDataloader` class is unava
 
 Hence, the features are calculated for the entire training and test sets and the batches for each training-epoch are manually calculated (please check the `fit` function inside `models/training.py`). Once the `__getitem__` implementation is finished, the use of anautomatic batch selection from `DataLoader` class will be employed, updating the current batch selection.
 
-After setting up the environment and storing (properly) the data, all you have to do is run the `main.py` file.
+After setting up the environment and storing (properly) the data, all you have to do is run the `main.py` file followed by the selected dataset (`padufes20` or `isic19`) and the model configuration (`ViT`, `words`, or `complete).
 
 Finally, a folder named `sample_data/checkpoints` will be created with the final model inside, after the training process is finished. You can load the model for further inference. 

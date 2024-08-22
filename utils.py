@@ -186,7 +186,7 @@ tokenizer = AutoTokenizer.from_pretrained("BEE-spoke-data/cl100k_base-mlm")
 trans_transform = ViTFeatureExtractor.from_pretrained('google/vit-large-patch16-224')
 tiktokenizer = tiktoken.get_encoding("cl100k_base")
 
-def process_data(Dataset):
+def process_data(Dataset, dataset_name):
   #getting the data
   start = 0
   end = 0 + int(len(Dataset.dataset.images)/6)
@@ -199,30 +199,31 @@ def process_data(Dataset):
   l = []
   yb = torch.tensor([])
   
-  while(end <= len(Dataset.dataset.images)): 
-       input_trans = torch.cat((input_trans, (trans_transform([np.array(Image.open(x).convert('RGB')) for x in Dataset.dataset.images[start:end]], return_tensors='pt'))['pixel_values'].squeeze()))
-       input_text = list(feature_extractor_text(list(Dataset.dataset.text[start:end]), return_tensors="pt"))
-       for i in range(len(input_text)):
-            l.append(torch.from_numpy(input_text[i][0].numpy().mean(axis=0)))
-       yb = torch.cat((yb, torch.tensor((Dataset.dataset.labels[start:end]).to_numpy(dtype=np.float64))))
-       start = end
-       end += iteration
-       if start < len(Dataset.dataset.images)-10 and end > len(Dataset.dataset.images):
-            end = len(Dataset.dataset.images) 
-       print(start)
-       print(end)
-       #x = input()
-            
-  '''
-  #for the PAD-UFES-20 dataset
-  input_trans = (trans_transform([np.array(Image.open(x).convert('RGB')) for x in Dataset.dataset.images], return_tensors='pt'))['pixel_values'].squeeze()
-  #input_text = tokenizer(list(Dataset.dataset.text), padding=True, truncation=True, max_length = 25, return_tensors="pt")
-  l = []
-  input_text = list(feature_extractor_text(list(Dataset.dataset.text), return_tensors="pt"))
-  for i in range(len(input_text)):
-  	l.append(torch.from_numpy(input_text[i][0].numpy().mean(axis=0)))
-  yb = torch.tensor((Dataset.dataset.labels[:]).to_numpy(dtype=np.float64))
-  '''
+  if dataset_name != "padufes20":
+        while(end <= len(Dataset.dataset.images)): 
+            input_trans = torch.cat((input_trans, (trans_transform([np.array(Image.open(x).convert('RGB')) for x in Dataset.dataset.images[start:end]], return_tensors='pt'))['pixel_values'].squeeze()))
+            input_text = list(feature_extractor_text(list(Dataset.dataset.text[start:end]), return_tensors="pt"))
+            for i in range(len(input_text)):
+                l.append(torch.from_numpy(input_text[i][0].numpy().mean(axis=0)))
+            yb = torch.cat((yb, torch.tensor((Dataset.dataset.labels[start:end]).to_numpy(dtype=np.float64))))
+            start = end
+            end += iteration
+            if start < len(Dataset.dataset.images)-10 and end > len(Dataset.dataset.images):
+                end = len(Dataset.dataset.images) 
+            print(start)
+            print(end)
+            #x = input()
+  else:              
+    
+    #for the PAD-UFES-20 dataset
+    input_trans = (trans_transform([np.array(Image.open(x).convert('RGB')) for x in Dataset.dataset.images], return_tensors='pt'))['pixel_values'].squeeze()
+    #input_text = tokenizer(list(Dataset.dataset.text), padding=True, truncation=True, max_length = 25, return_tensors="pt")
+    l = []
+    input_text = list(feature_extractor_text(list(Dataset.dataset.text), return_tensors="pt"))
+    for i in range(len(input_text)):
+        l.append(torch.from_numpy(input_text[i][0].numpy().mean(axis=0)))
+    yb = torch.tensor((Dataset.dataset.labels[:]).to_numpy(dtype=np.float64))
+    
   return(input_trans, torch.stack(l), yb)	
 
 def process_data_2(Dataset):

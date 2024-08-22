@@ -22,13 +22,13 @@ class model_final(nn.Module):
         self.relu = nn.ReLU()
         self.trans_linear = nn.Linear(150528, 4096)
         self.batchnorm0 = nn.BatchNorm1d(4864)
-        #self.batchnorm0 = nn.BatchNorm1d(4096)
-        #self.batchnorm0 = nn.BatchNorm1d(4186)
         self.batchnorm1 = nn.BatchNorm1d(4096)
         self.batchnorm2 = nn.BatchNorm1d(2048)
         self.batchnorm3 = nn.BatchNorm1d(1024)
         self.batchnorm4 = nn.BatchNorm1d(512)
         self.batchnorm5 = nn.BatchNorm1d(256)
+        self.batchnorm6 = nn.BatchNorm1d(768)
+        
         
         # All the text model
         #by now, only the features are being added
@@ -45,10 +45,9 @@ class model_final(nn.Module):
 
         # Merge the result and pass the
         self.dropout = nn.Dropout(dp_rate)
-        self.linear0 = nn.Linear(5960, 4096)
-        self.linear1 = nn.Linear(4864, 2048)
-        self.linear01 = nn.Linear(4096, 1024)
-        #self.linear1 = nn.Linear(4096, 2048)
+        self.linear_complete = nn.Linear(4864, 2048)
+        self.linear_words = nn.Linear(768, 1024)
+        self.linear_vit = nn.Linear(4096, 2048)
         self.linear2 = nn.Linear(2048, 1024)
         self.linear3 = nn.Linear(1024, 512)
         self.linear4 = nn.Linear(512, 256)
@@ -56,7 +55,7 @@ class model_final(nn.Module):
         self.softmax = nn.Softmax(dim=1)
 
     #change forward to match with Bert Model
-    def forward(self, trans_b, token_b_input_feats):
+    def forward(self, trans_b, token_b_input_feats, model_config):
         # Get intermediate outputs using hidden layer
         result_trans = self.model_trans_top(trans_b)
         patch_state = result_trans.last_hidden_state[:,1:,:] # Remove the classification token and get the last hidden state of all patchs
@@ -65,6 +64,7 @@ class model_final(nn.Module):
         result_trans = self.dropout(result_trans)
         result_trans = self.trans_linear(result_trans)
         result_trans = self.dropout(result_trans)
+
         #extra vit processing
         #result_trans = self.linear01(result_trans)
 
@@ -83,29 +83,47 @@ class model_final(nn.Module):
         result_token = self.dropout(result_token)
         result_token = self.token_linear(result_token)
         '''
+        if model_config == "words":
+            result_merge = result_token
+            result_merge = self.dropout(result_merge)
+            self.relu1 = self.relu(result_merge)
+            result_merge = self.batchnorm6(self.relu1)
 
-        result_merge = torch.cat((result_trans, result_token),1)
-        #result_merge = result_token
-        result_merge = self.dropout(result_merge)
-        self.relu1 = self.relu(result_merge)
-        result_merge = self.batchnorm0(self.relu1)
+            result_merge = self.linear_words(result_merge)
+            result_merge = self.batchnorm3(result_merge)
+            result_merge = self.dropout(result_merge)
+            self.relu3 = self.relu(result_merge)
 
-        '''
-        result_merge = self.linear0(result_merge)
-        result_merge = self.batchnorm1(result_merge)
-        result_merge = self.dropout(result_merge)
-        result_merge = self.relu(result_merge)
-        '''
-        result_merge = self.linear1(result_merge)
-        result_merge = self.batchnorm2(result_merge)
-        result_merge = self.dropout(result_merge)
-        self.relu2 = self.relu(result_merge)
-        
-        
-        result_merge = self.linear2(result_merge)
-        result_merge = self.batchnorm3(result_merge)
-        result_merge = self.dropout(result_merge)
-        self.relu3 = self.relu(result_merge)
+        elif model_config == "ViT":
+            result_merge = result_trans
+            result_merge = self.dropout(result_merge)
+            self.relu1 = self.relu(result_merge)
+            result_merge = self.batchnorm1(self.relu1)
+
+            result_merge = self.linear_vit(result_merge)
+            result_merge = self.batchnorm2(result_merge)
+            result_merge = self.dropout(result_merge)
+            self.relu2 = self.relu(result_merge)
+
+            result_merge = self.linear2(result_merge)
+            result_merge = self.batchnorm3(result_merge)
+            result_merge = self.dropout(result_merge)
+            self.relu3 = self.relu(result_merge)
+        else: 
+            result_merge = torch.cat((result_trans, result_token),1)
+            result_merge = self.dropout(result_merge)
+            self.relu1 = self.relu(result_merge)
+            result_merge = self.batchnorm0(self.relu1)
+
+            result_merge = self.linear_complete(result_merge)
+            result_merge = self.batchnorm2(result_merge)
+            result_merge = self.dropout(result_merge)
+            self.relu2 = self.relu(result_merge)
+
+            result_merge = self.linear2(result_merge)
+            result_merge = self.batchnorm3(result_merge)
+            result_merge = self.dropout(result_merge)
+            self.relu3 = self.relu(result_merge)
         
         result_merge = self.linear3(self.relu3)
         result_merge = self.batchnorm4(result_merge)

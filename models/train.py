@@ -18,7 +18,7 @@ from utils import process_data, process_data_2, accuracy
 ####################################################################### Model's Fit Function ###################################################################################################################
 ################################################################################################################################################################################################################
 
-def fit(epochs, model, train_dl, optimizer, lr_scheduler, batch_num):
+def fit(epochs, model, train_dl, optimizer, lr_scheduler, batch_num, dataset_name, model_config):
     opt = optimizer
     sched = lr_scheduler
     loss_func = nn.CrossEntropyLoss()
@@ -27,7 +27,7 @@ def fit(epochs, model, train_dl, optimizer, lr_scheduler, batch_num):
     path = "sample_data/checkpoints/" # user_defined path to save model
     
     print("Calculating the features...")
-    image_input,text_input,label = process_data(train_dl)
+    image_input,text_input,label = process_data(train_dl, dataset_name)
     
     print("Feature sizes: ViT({}); pipeline({}); labels({}).".format(image_input.size(), text_input.size(), label.size()))
     
@@ -71,7 +71,7 @@ def fit(epochs, model, train_dl, optimizer, lr_scheduler, batch_num):
             l_labels = torch.stack(l_labels)
 
             
-            preds = model(l_image_input, l_text_input_ids.to(torch.float32))
+            preds = model(l_image_input, l_text_input_ids.to(torch.float32), model_config)
             loss = loss_func(preds,l_labels)
 
             out_preds = torch.argmax(preds, dim=1).squeeze().tolist()

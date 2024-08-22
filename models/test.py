@@ -32,7 +32,7 @@ def plot_confusion_matrix(df_confusion, title='Confusion matrix', cmap=plt.cm.gr
 ####################################################################### Model's Test Functions #################################################################################################################
 ################################################################################################################################################################################################################
     
-def test_partial(model, test_data, batch_num):
+def test_partial(model, test_data, batch_num, model_config):
     #_COVERSION = {"": ""}
     model.eval()
     test_loss = 0
@@ -63,7 +63,7 @@ def test_partial(model, test_data, batch_num):
         l_text_input_ids = torch.stack(l_text_input_ids)
         l_target = torch.stack(l_target)
         starting_time = time.time()
-        output = model(l_image_input, l_text_input_ids.to(torch.float32))
+        output = model(l_image_input, l_text_input_ids.to(torch.float32), model_config)
         #pred = output.argmax(1, keepdim=True)
         test_loss = loss_func(output,l_target)
         acc = accuracy(output,l_target)
