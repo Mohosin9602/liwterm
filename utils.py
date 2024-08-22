@@ -128,7 +128,7 @@ def process_metadata_frame(df_meta):
 	df.loc[df["diagnostics"] == "BOD", "diagnostics"] = 4
 	df.loc[df["diagnostics"] == "MEL", "diagnostics"] = 5   
 	
-	return(df, df_meta)  
+	return(df)  
 
 # ISIC19 Processing
 
@@ -142,7 +142,7 @@ def process_metadata_frame_isic(df_meta):
 	df["text"] = "empty"
 	df["diagnostics_class"] = df_meta["diagnostic"]
 	df["age"] = df_meta["age"]
-	df["diagnostics"] = "UNK"
+	df["diagnostics"] = df_meta["diagnostic_number"]
      
 	for regs in ["region_anterior torso", "region_upper extremity", "region_posterior torso", "region_lower extremity", "region_lateral torso", "region_head/neck", "region_palms/soles", "region_oral/genital"]:
 		df[regs] = df_meta[regs]
@@ -170,16 +170,6 @@ def process_metadata_frame_isic(df_meta):
                  age = "Age of " + str(int(df.iloc[i]["age"])) + "."
             df.at[i,"text"] = age + str(df.iloc[i, df.columns.get_loc("region")]) + gender
 	      
-	#set the diagnostics label
-	df.loc[df["diagnostics"] == "MEL", "diagnostics"] = 0
-	df.loc[df["diagnostics"] == "NV", "diagnostics"] = 1
-	df.loc[df["diagnostics"] == "BCC", "diagnostics"] = 2
-	df.loc[df["diagnostics"] == "AK", "diagnostics"] = 3
-	df.loc[df["diagnostics"] == "BKL", "diagnostics"] = 4
-	df.loc[df["diagnostics"] == "DF", "diagnostics"] = 5
-	df.loc[df["diagnostics"] == "VASC", "diagnostics"] = 6
-	df.loc[df["diagnostics"] == "SCC", "diagnostics"] = 7
-	df.loc[df["diagnostics"] == "UNK", "diagnostics"] = 8
 
 	df = df.drop(columns=["region_anterior torso", "region_upper extremity", "region_posterior torso", "region_lower extremity", "region_lateral torso", "region_head/neck", "region_palms/soles", "region_oral/genital", "age", "gender_female", "gender_male"])
 	
@@ -199,23 +189,22 @@ tiktokenizer = tiktoken.get_encoding("cl100k_base")
 def process_data(Dataset):
   #getting the data
   start = 0
-  end = 0 + int(len(Dataset.dataset.images)/3)
-  iteration = int(len(Dataset.dataset.images)/3)
+  end = 0 + int(len(Dataset.dataset.images)/6)
+  iteration = int(len(Dataset.dataset.images)/6)
 
   #print(Dataset.dataset.images[start:end])
   #print(Dataset.dataset.text[start:end])
 
-  l_input_trans = []
+  input_trans = torch.tensor([])
   l = []
-  yb = []
-
+  yb = torch.tensor([])
+  
   while(end <= len(Dataset.dataset.images)): 
-       input_trans = list(trans_transform([np.array(Image.open(x).convert('RGB')) for x in Dataset.dataset.images[start:end]], return_tensors='pt'))['pixel_values'].squeeze()
+       input_trans = torch.cat((input_trans, (trans_transform([np.array(Image.open(x).convert('RGB')) for x in Dataset.dataset.images[start:end]], return_tensors='pt'))['pixel_values'].squeeze()))
        input_text = list(feature_extractor_text(list(Dataset.dataset.text[start:end]), return_tensors="pt"))
        for i in range(len(input_text)):
             l.append(torch.from_numpy(input_text[i][0].numpy().mean(axis=0)))
-            l_input_trans.append(input_trans)
-       yb.append((Dataset.dataset.labels[start:end]).to_numpy(dtype=np.float64))
+       yb = torch.cat((yb, torch.tensor((Dataset.dataset.labels[start:end]).to_numpy(dtype=np.float64))))
        start = end
        end += iteration
        if start < len(Dataset.dataset.images)-10 and end > len(Dataset.dataset.images):
@@ -234,7 +223,7 @@ def process_data(Dataset):
   	l.append(torch.from_numpy(input_text[i][0].numpy().mean(axis=0)))
   yb = torch.tensor((Dataset.dataset.labels[:]).to_numpy(dtype=np.float64))
   '''
-  return(torch.stack(l_input_trans), torch.stack(l), torch.tensor(yb))	
+  return(input_trans, torch.stack(l), yb)	
 
 def process_data_2(Dataset):
   #getting the data

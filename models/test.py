@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import time
 
 from torchvision import transforms
 from torch.utils.data import DataLoader
@@ -61,7 +62,7 @@ def test_partial(model, test_data, batch_num):
         l_image_input = torch.stack(l_image_input)
         l_text_input_ids = torch.stack(l_text_input_ids)
         l_target = torch.stack(l_target)
-
+        starting_time = time.time()
         output = model(l_image_input, l_text_input_ids.to(torch.float32))
         #pred = output.argmax(1, keepdim=True)
         test_loss = loss_func(output,l_target)
@@ -78,6 +79,7 @@ def test_partial(model, test_data, batch_num):
       print("Overall Accuracy: ", overall_acc)
       print("Test Labels: ", out_labels)
       print("Test Predictions: ", out_preds)
+      print("Inference Time: ", time.time() - starting_time)
       df_confusion = pd.crosstab(out_preds, out_labels)
       print(df_confusion)
       plot_confusion_matrix(df_confusion)

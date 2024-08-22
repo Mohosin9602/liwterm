@@ -34,6 +34,8 @@ def fit(epochs, model, train_dl, optimizer, lr_scheduler, batch_num):
     if not os.path.exists(path):
       os.makedirs(path)
     print("Training...\n")
+    acc_training = []
+    loss_training = []
     for epoch in range(epochs):
         
         counter = 0
@@ -107,6 +109,12 @@ def fit(epochs, model, train_dl, optimizer, lr_scheduler, batch_num):
        
         sched.step(total_loss)
         print('\n', f'Epoch: ({epoch+1}/{epochs}) Loss = {total_loss/n_batches}', f'Accuracy: ({acc/n_batches})')
+        acc_training.append(acc/n_batches)
+        loss_training.append(total_loss/n_batches)
 
     torch.save(model.state_dict(), (path + "final_megamodel.pt"))    
+    with open("loss_training.txt", "w") as f:
+       f.write('\n'.join(str(loss_values) for loss_values in loss_training))
 
+    with open("acc_training.txt", "w") as f:
+       f.write('\n'.join(str(acc_values.item()) for acc_values in acc_training))

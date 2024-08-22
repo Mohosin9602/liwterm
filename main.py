@@ -28,7 +28,7 @@ print(os.getcwd())
 batch_size = 24
 
 #n_classes
-n_classes = 6
+n_classes = 8
 folder = 1
 
 #ViT Feature Transformation version
@@ -59,16 +59,19 @@ print(df_test.loc[df_test["text"] != "empty"])
 
 #folder filtering
 #TODO use only train folders - validation file is only for testing (folder == 6)
-df = df.loc[(df.folder == 1), :]
+df = df.loc[(df.folder == 1) | (df.folder == 2), :]
 df_test = df_test.loc[df_test["folder"] == 6]
+df_test = df_test.iloc[0:int(len(df_test)/2)]
 df = df.drop("folder", axis=1)
 df_test = df_test.drop("folder", axis=1)
 
-classes = tuple(df["diagnostics_class"].unique())
+classes = tuple(df["diagnostics"].unique())
 print(classes)
 
 print(df)
 print(len(df))
+
+print(tuple(df_test["diagnostics"].unique()))
 
 #Loaders definition
 #This transformation is required for the data loading and dataloader creation
