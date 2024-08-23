@@ -119,7 +119,7 @@ print(model)
 optimizer, lr_scheduler = set_params(model)
 
 #Training the model and save the weights
-fit(65, model, train_dl, optimizer, lr_scheduler, batch_size, config['src_dataset'], config['backbone'],)
+fit(65, model, train_dl, optimizer, lr_scheduler, batch_size, config['src_dataset'], config['backbone'])
 
 #for loading the saved model model loading
 #model_load = model_final(model_trans_top, trans_layer_norm, dp_rate = 0.15)
@@ -127,4 +127,4 @@ fit(65, model, train_dl, optimizer, lr_scheduler, batch_size, config['src_datase
 #print(model_load)
 
 #Testing
-test_partial(model,test_dl, batch_size)
+test_partial(model,test_dl, batch_size, config['backbone'])

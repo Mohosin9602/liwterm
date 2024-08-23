@@ -42,7 +42,7 @@ def test_partial(model, test_data, batch_num, model_config):
     out_preds = []
     with torch.no_grad():
 
-      image_input,text_input,target = process_data(test_data)
+      image_input,text_input,target = process_data(test_data, model_config)
       overall_acc = 0
       n_batches = int(int(target.size(dim=0))/batch_num)
       print("\n N of batches = {}\n".format(n_batches))
