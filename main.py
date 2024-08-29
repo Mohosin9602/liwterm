@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""TransFuse.ipynb
+"""
 Luis Souza
 la.souza@inf.ufes.br
 """
@@ -18,7 +18,7 @@ from datasets import Dataset
 from utils import process_metadata_frame, customDataset, process_data, set_params, process_metadata_frame_isic
 from models.vit import vit_model
 from models.bert import bert_model
-from models.transfuse import model_final
+from models.liwterm import model_final
 from models.train import fit
 from models.test import test_partial
 

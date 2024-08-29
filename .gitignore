@@ -3,3 +3,4 @@
 *.pt
 __pycache__/
 models/__pycache__/
+*.txt
