@@ -1,138 +1,120 @@
-# -*- coding: utf-8 -*-
-"""
-Luis Souza
-la.souza@inf.ufes.br
-"""
-
-#imports
+import sys
+sys.path.append('../')
 
 import os
-import pandas as pd
-import numpy as np
 import torch
-import argparse
+import torch.nn as nn
+import torch.nn.functional as F
+import time
+import random
 
-from transformers import ViTFeatureExtractor, ViTImageProcessor, ViTModel, ViTConfig
-from torch.utils.data import DataLoader # using built-in DataLoader
-from datasets import Dataset
-from utils import process_metadata_frame, customDataset, process_data, set_params, process_metadata_frame_isic, DeviceDataLoader, get_default_device
-# import models
-from models.vit import vit_model
-from models.bert import bert_model
-from models.liwterm import model_final
-from models.train import fit
-from models.test import test_partial
+from random import seed
+from torchvision import transforms
+from torch.utils.data import DataLoader
+from utils import process_data, process_data_2, accuracy
 
-#parser for inputs
-parser = argparse.ArgumentParser()
-parser.add_argument("src_dataset", help="Dataset Name.")
-parser.add_argument("backbone", help="ViT or words or complete")
-args = parser.parse_args()
-config = vars(args)
-print(config)
 
-#checking the current folder
-print(os.getcwd())
+################################################################################################################################################################################################################
+####################################################################### Model's Fit Function ###################################################################################################################
+################################################################################################################################################################################################################
 
-#batch size definition
-batch_size = 24
-
-#n_classes
-n_classes = 8
-folder = 1
-
-#ViT Feature Transformation version
-trans_version = 'google/vit-large-patch16-224'
-vit_weights_version = 'google/vit-base-patch16-224-in21k'
-
-#dataset definition:
-if config['src_dataset'] != "padufes20":
-    dataset_path = "data/ISIC19/imgs/"
-    metadata_train_path = "data/ISIC19/isic19_parsed_folders.csv"
-    metadata_test_path = "data/ISIC19/isic19_parsed_test.csv"
-
-else:
-    dataset_path = "data/imgs/"
-    metadata_train_path = "data/pad-ufes-20_parsed_folders_train.csv"
-    metadata_test_path = "data/pad-ufes-20_parsed_test.csv"
-
-#Load training data
-files = os.listdir(dataset_path)
-files_test = os.listdir(dataset_path)
-
-df_metadata = pd.read_csv(metadata_train_path, header = 0, index_col = False)	
-df_metadata_test = pd.read_csv(metadata_test_path, header = 0, index_col = False) #########################################
-
-if config['src_dataset'] != "padufes20":
-    df = process_metadata_frame_isic(df_metadata)
-    df_test = process_metadata_frame_isic(df_metadata_test)
-    df = df.loc[(df.folder == 1) | (df.folder == 2), :] # Filtering Rows(images) Based on Folder
-    df_test = df_test.loc[df_test["folder"] == 6] # same
-    df_test = df_test.iloc[0:int(len(df_test)/2)] # Reducing Test Data Size
-    df = df.drop("folder", axis=1)
-    df_test = df_test.drop("folder", axis=1)
-else:
-    df = process_metadata_frame(df_metadata)
-    df_test = process_metadata_frame(df_metadata_test)
+def fit(epochs, model, train_dl, optimizer, lr_scheduler, batch_num, dataset_name, model_config):
+    opt = optimizer
+    sched = lr_scheduler
+    loss_func = nn.CrossEntropyLoss()
+    best_score = None
+    patience = 50
+    path = "sample_data/checkpoints/" # user_defined path to save model
     
-df["file_path"] = dataset_path + df["file_path"]
+    print("Calculating the features...")
+    image_input,text_input,label = process_data(train_dl, dataset_name)
+    
+    print("Feature sizes: ViT({}); pipeline({}); labels({}).".format(image_input.size(), text_input.size(), label.size()))
+    
+    if not os.path.exists(path):
+      os.makedirs(path)
+    print("Training...\n")
+    acc_training = []
+    loss_training = []
+    for epoch in range(epochs):
+        
+        counter = 0
+        model.train()
+       
+        acc = 0
+        total_loss = 0
+        
+        label = label.long()
+        n_batches = int(int(label.size(dim=0))/batch_num)
+        penalty = 0.001
 
-print(len(df.loc[df["text"] != "empty"]))
-print(df.loc[df["text"] != "empty"])
+        #number of batches
+        for batches in range(int(int(label.size(dim=0))/batch_num)):
+        #for batches in range(2):    
+            l_batches = []
+            seed(time.perf_counter())
+            for j in range(batch_num):
+              seed(time.perf_counter())
+              l_batches.append(random.randint(0,int(label.size(dim=0))-1))
 
-df_test["file_path"] = dataset_path + df_test["file_path"]
-print(len(df_test.loc[df_test["text"] != "empty"]))
-print(df_test.loc[df_test["text"] != "empty"])
+            l_image_input = []
+            l_text_input_ids = []
+            l_text_input_attention = []
+            l_labels = []
 
-#folder filtering
-#TODO use only train folders - validation file is only for testing (folder == 6)
-classes = tuple(df["diagnostics"].unique())
-print(classes)
+            for i in l_batches:
+              l_image_input.append(image_input[i,:])
+              l_text_input_ids.append(text_input[i,:])
+              l_labels.append(label[i])
+            l_image_input = torch.stack(l_image_input)
+            l_text_input_ids = torch.stack(l_text_input_ids)
+            l_labels = torch.stack(l_labels)
 
-print(df)
-print(len(df))
+            
+            preds = model(l_image_input, l_text_input_ids.to(torch.float32), model_config)
+            loss = loss_func(preds,l_labels)
 
-print(tuple(df_test["diagnostics"].unique()))
+            out_preds = torch.argmax(preds, dim=1).squeeze().tolist()
+            out_labels = l_labels.squeeze().tolist()
+            '''
+            #verifying if the gradient punishing is required (only for class 5 misclassification)
+            dg_punish = 0
+            for i in range(len(out_labels)):
+               if out_labels[i] == 5 and out_preds[i] != 5:
+                  dg_punish = 1
+                  break
 
-#Loaders definition
-#This transformation is required for the data loading and dataloader creation
-trans_transform = ViTFeatureExtractor.from_pretrained(trans_version)
+            # This is where the activation gradients are computed
+            # But it makes clear that we're *only* interested in the activation gradients at this point
+            if dg_punish:
+              grads = torch.autograd.grad(loss, [model.relu1, model.relu2, model.relu3, model.relu4, model.relu5, model.softmaxact], create_graph=True, only_inputs=True)
+              grad_norm = 0
+              for grad in grads:
+                #L2 penalty
+                grad_norm += grad.pow(2).sum()
+              print("grad_nomr: ",grad_norm)
+              #TODO check if class 5 was mispredicted, and then apply the gradient penalty
+              loss = loss + grad_norm * penalty
+            '''
+            loss.backward()
+            opt.step()
+            opt.zero_grad()
 
-# Get the default device (GPU if available, else CPU)#############################################################
-device = get_default_device()#####################################################################################
-print(f"Using device: {device}")##################################################################################
+            print('\n', f'batch #{batches}: {loss}', f'Accuracy: ({accuracy(preds,l_labels)})', end='')
+            print("\n Selected batches: ", l_batches)
+            print('\n', f'preds: {torch.argmax(preds, dim=1)}', f'labels: {l_labels}')
+            total_loss += loss.item()
+            acc += accuracy(preds,l_labels)
+          
+       
+        sched.step(total_loss)
+        print('\n', f'Epoch: ({epoch+1}/{epochs}) Loss = {total_loss/n_batches}', f'Accuracy: ({acc/n_batches})')
+        acc_training.append(acc/n_batches)
+        loss_training.append(total_loss/n_batches)
 
-train_ds = customDataset(df, trans_transform=trans_transform)
-train_dl = DataLoader(train_ds, batch_size=16, shuffle=True)
-train_dl = DeviceDataLoader(train_dl, device)  # Move data to GPU#################################################
+    torch.save(model.state_dict(), (path + "final_megamodel.pt"))    
+    with open("loss_training.txt", "w") as f:
+       f.write('\n'.join(str(loss_values) for loss_values in loss_training))
 
-test_ds = customDataset(df_test, trans_transform=trans_transform)
-test_dl = DataLoader(test_ds, batch_size=16, shuffle=True)
-test_dl = DeviceDataLoader(test_dl, device)  # Move data to GPU###################################################
-
-print(test_dl.dataset.labels)
-
-#ViT model
-model_trans_top, trans_layer_norm = vit_model(vit_weights_version)
-print(model_trans_top)
-
-#Transfuse model
-model = model_final(model_trans_top, trans_layer_norm, n_classes, dp_rate = 0.3)
-model = model.to(device)  # Move model to GPU
-# model.load_state_dict(torch.load('model_weights_1228'))
-
-print(model)
- 
-# Define optimizer and learning_rate scheduler
-optimizer, lr_scheduler = set_params(model)
-
-#Training the model and save the weights
-fit(65, model, train_dl, optimizer, lr_scheduler, batch_size, config['src_dataset'], config['backbone'])
-
-#for loading the saved model model loading
-#model_load = model_final(model_trans_top, trans_layer_norm, dp_rate = 0.15)
-#model_load.load_state_dict(torch.load("sample_data/checkpoints/final_megamodel.pt"))
-#print(model_load)
-
-#Testing
-test_partial(model,test_dl, batch_size, config['backbone'])
+    with open("acc_training.txt", "w") as f:
+       f.write('\n'.join(str(acc_values.item()) for acc_values in acc_training))

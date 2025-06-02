@@ -19,12 +19,16 @@ def plot_confusion_matrix(df_confusion, title='Confusion matrix', cmap=plt.cm.gr
     plt.matshow(df_confusion, cmap=cmap) # imshow
     #plt.title(title)
     plt.colorbar()
-    tick_marks = np.arange(len(df_confusion.columns))
-    plt.xticks(tick_marks, df_confusion.columns, rotation=45)
-    plt.yticks(tick_marks, df_confusion.index)
+    
+    # Handle row and column tick marks separately
+    x_tick_marks = np.arange(len(df_confusion.columns))
+    y_tick_marks = np.arange(len(df_confusion.index))
+    
+    plt.xticks(x_tick_marks, df_confusion.columns, rotation=45)
+    plt.yticks(y_tick_marks, df_confusion.index)
     #plt.tight_layout()
-    plt.ylabel(df_confusion.index.name)
-    plt.xlabel(df_confusion.columns.name)
+    plt.ylabel('Actual')
+    plt.xlabel('Predicted')
 
     plt.show()
 
@@ -80,7 +84,8 @@ def test_partial(model, test_data, batch_num, model_config):
       print("Test Labels: ", out_labels)
       print("Test Predictions: ", out_preds)
       print("Inference Time: ", time.time() - starting_time)
-      df_confusion = pd.crosstab(out_preds, out_labels)
+      # Standard confusion matrix format: true labels as rows, predictions as columns
+      df_confusion = pd.crosstab(out_labels, out_preds, rownames=['Actual'], colnames=['Predicted'])
       print(df_confusion)
       plot_confusion_matrix(df_confusion)
 
