@@ -103,7 +103,7 @@ if config['src_dataset'] != "padufes20":
 else:
     df = process_metadata_frame(df_metadata)
     df_test = process_metadata_frame(df_metadata_test)
-
+    
 # Add full paths to image files
 df["file_path"] = dataset_path + df["file_path"]
 df_test["file_path"] = dataset_path + df_test["file_path"]
@@ -197,7 +197,7 @@ try:
         except Exception as e:
             print(f"Could not load weights: {e}")
             print("Starting with fresh model...")
-    
+
     # Move model to device
     model = model.to(device)
     print(f"Model successfully moved to {device}")
@@ -224,9 +224,9 @@ optimizer, lr_scheduler = set_params(model)
 print("\nCalculating class weights for balanced training...")
 if config['use_batched']:
     # For batched processing, we need to get labels differently
-    all_labels = torch.tensor(df_train['diagnostics'].values)
+    all_labels = torch.tensor(df_train['diagnostics'].astype(float).values, dtype=torch.float64)
 else:
-    all_labels = torch.tensor(df_train['diagnostics'].values)
+    all_labels = torch.tensor(df_train['diagnostics'].astype(float).values, dtype=torch.float64)
 
 class_weights = calculate_class_weights(all_labels, n_classes, device)
 print(f"Class weights: {class_weights}")

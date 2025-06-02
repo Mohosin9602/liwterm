@@ -125,7 +125,7 @@ def fit(epochs, model, train_dl, val_dl, optimizer, lr_scheduler, batch_num,
             image_input, text_input, label = process_data_batched(train_dl, dataset_name, device)
         else:
             image_input, text_input, label = process_data(train_dl, dataset_name)
-            # Move tensors to device
+    # Move tensors to device
             image_input = image_input.to(device)
             text_input = text_input.to(device)
             label = label.to(device)
@@ -156,7 +156,7 @@ def fit(epochs, model, train_dl, val_dl, optimizer, lr_scheduler, batch_num,
     # Training loop
     for epoch in range(epochs):
         model.train()
-        
+       
         # Training metrics for this epoch
         epoch_loss = 0
         epoch_acc = 0
@@ -204,7 +204,7 @@ def fit(epochs, model, train_dl, val_dl, optimizer, lr_scheduler, batch_num,
             
             opt.step()
             opt.zero_grad()
-            
+
             # Update metrics
             batch_acc = accuracy(preds, batch_labels)
             epoch_loss += loss.item()
@@ -284,7 +284,7 @@ def fit(epochs, model, train_dl, val_dl, optimizer, lr_scheduler, batch_num,
     if val_losses:
         with open(os.path.join(path, "loss_validation.txt"), "w") as f:
             f.write('\n'.join(str(loss) for loss in val_losses))
-        
+
         with open(os.path.join(path, "acc_validation.txt"), "w") as f:
             f.write('\n'.join(str(acc.item() if hasattr(acc, 'item') else acc) for acc in val_accs))
     

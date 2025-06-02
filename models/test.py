@@ -45,7 +45,7 @@ def plot_confusion_matrix(df_confusion, title='Confusion matrix', cmap=plt.cm.gr
     plt.ylabel('Actual')
     plt.xlabel('Predicted')
     plt.title(title)
-    
+
     # Save figure instead of showing (for remote environments)
     plt.savefig('confusion_matrix.png', bbox_inches='tight', dpi=150)
     plt.close()  # Close to prevent memory leak
@@ -111,12 +111,12 @@ def test_partial(model, test_data, batch_num, model_config, dataset_name="padufe
                 image_input, text_input, target = process_data_batched(test_data, dataset_name, device, batch_size=16)
             else:
                 raise e
-        
+
         overall_acc = 0
         n_batches = int(len(target) / batch_num)
         print(f"\nNumber of test batches: {n_batches}")
         print(f"Total test samples: {len(target)}")
-        
+
         target = target.long()
         batch_start = 0
         
@@ -289,9 +289,9 @@ def test(model, test_dl):
     with torch.no_grad():
         image_input, text_input, target = process_data(test_dl)
         target = target.long()
-        
+
         output = model(image_input, text_input['input_ids'], text_input['attention_mask'])
-        
+
         acc = accuracy(output, target)
         print(f'\nTest set: Accuracy: {acc:.4f} ({acc*100:.2f}%)\n')
 

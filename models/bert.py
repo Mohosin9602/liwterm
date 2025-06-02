@@ -4,19 +4,26 @@ from transformers import ViTFeatureExtractor, ViTImageProcessor, ViTModel, ViTCo
 ####################################################################### Text Model Definitions #################################################################################################################
 ################################################################################################################################################################################################################
 
-# Modifying the tokenizer model - metadata
-def bert_model():
-	count = 0
-	for child in model_token.children():
-	    #print(child, count)
-	    count += 1
-	    if count < 4:
-	    	for param in child.parameters():
-	    		param.requires_grad = False
-
-	layers_token = list(model_token.children()) # Get all the layers from the Transformer model
-
-	#model_token_top = deleteEncodingLayers(model_token, list(layers_token[:-1])) # Remove the pooler layer
-	model_token_top = model_token
-	return model_token_top
+def bert_model(model_name='bert-base-uncased'):
+    """
+    Initialize and configure a BERT model for text feature extraction.
+    
+    Args:
+        model_name: name of the pre-trained BERT model to use
+    
+    Returns:
+        model: configured BERT model with frozen layers
+    """
+    # Initialize the BERT model
+    model_token = BertModel.from_pretrained(model_name)
+    
+    # Freeze early layers
+    count = 0
+    for child in model_token.children():
+        count += 1
+        if count < 4:
+            for param in child.parameters():
+                param.requires_grad = False
+    
+    return model_token
 

@@ -23,9 +23,8 @@ class customDataset(Dataset):
     Args:
         dataframe: pandas DataFrame containing file paths, text descriptions, and diagnostic labels
         trans_transform: transformation to apply to images (e.g., ViT feature extractor)
-        text_transform: transformation to apply to text (currently unused)
     """
-    def __init__(self, dataframe, trans_transform=None, text_transform=None):
+    def __init__(self, dataframe, trans_transform=None):
         self.labels = dataframe["diagnostics"]
         self.images = dataframe["file_path"]
         self.text = dataframe["text"]
@@ -38,6 +37,12 @@ class customDataset(Dataset):
         """
         Returns raw data for a single sample. Actual transformations are applied later
         to enable batch processing and memory efficiency.
+        
+        Args:
+            idx: index of the sample to get
+            
+        Returns:
+            tuple: (image_path, text, label)
         """
         # Get the image path, text, and label for this index
         img_path = self.images.iloc[idx] if hasattr(self.images, 'iloc') else self.images[idx]
@@ -54,154 +59,180 @@ class customDataset(Dataset):
 # PAD-UFES-20 Processing 
 
 def process_metadata_frame(df_meta):
-	"""
-	Process PAD-UFES-20 metadata into a format suitable for training.
-	Converts binary features into natural language descriptions.
-	
-	Args:
-	    df_meta: raw metadata DataFrame
-	
-	Returns:
-	    df: processed DataFrame with file_path, text descriptions, and diagnostic labels
-	"""
-	#create the data frame
-	df = pd.DataFrame()
-	df["file_path"] = list(df_meta["img_id"])
-	
-	# Convert image IDs to proper file paths
-	for i in range(len(df)):
-		df.at[i,"file_path"] = str(df.iloc[i]["file_path"]).split(".")[0] + ".png"
-	
-	# Initialize columns
-	df["text"] = "empty"
-	df["diagnostics"] = "UNK"
-	df["diagnostics_class"] = "UNK"	
-	
-	# Convert binary gender indicator to text
-	df_meta.loc[df_meta["gender_FEMALE"] == 1, "gender_FEMALE"] = " The subject is a female."
-	df_meta.loc[df_meta["gender_FEMALE"] == 0, "gender_FEMALE"] = " The subject is a male. "
+    """
+    Process PAD-UFES-20 metadata into a format suitable for training.
+    Converts binary features into natural language descriptions.
+    
+    Args:
+        df_meta: raw metadata DataFrame
+    
+    Returns:
+        df: processed DataFrame with file_path, text descriptions, and diagnostic labels
+    """
+    # Create the data frame
+    df = pd.DataFrame()
+    df["file_path"] = list(df_meta["img_id"])
+    
+    # Convert image IDs to proper file paths
+    for i in range(len(df)):
+        df.at[i,"file_path"] = str(df.iloc[i]["file_path"]).split(".")[0] + ".png"
+    
+    # Initialize columns
+    df["text"] = "empty"
+    df["diagnostics"] = "UNK"
+    df["diagnostics_class"] = "UNK"    
+    
+    # Convert binary gender indicator to text
+    df_meta.loc[df_meta["gender_FEMALE"] == 1, "gender_FEMALE"] = " The subject is a female."
+    df_meta.loc[df_meta["gender_FEMALE"] == 0, "gender_FEMALE"] = " The subject is a male. "
 
-	# Convert medical history indicators to text
-	df_meta.loc[df_meta["skin_cancer_history_True"] == 1, "skin_cancer_history_True"] = " There is a skin cancer history."
-	df_meta.loc[df_meta["skin_cancer_history_True"] == 0, "skin_cancer_history_True"] = " There is no skin cancer history."
+    # Convert medical history indicators to text
+    df_meta.loc[df_meta["skin_cancer_history_True"] == 1, "skin_cancer_history_True"] = " There is a skin cancer history."
+    df_meta.loc[df_meta["skin_cancer_history_True"] == 0, "skin_cancer_history_True"] = " There is no skin cancer history."
 
-	df_meta.loc[df_meta["cancer_history_True"] == 1, "cancer_history_True"] = " There is a cancer history."
-	df_meta.loc[df_meta["cancer_history_True"] == 0, "cancer_history_True"] = " There is no cancer history."
+    df_meta.loc[df_meta["cancer_history_True"] == 1, "cancer_history_True"] = " There is a cancer history."
+    df_meta.loc[df_meta["cancer_history_True"] == 0, "cancer_history_True"] = " There is no cancer history."
 
-	# Process Fitzpatrick skin type
-	df_meta["fitspatrick_index"] = " No fitspatrick available."
-	for fits in ["fitspatrick_1.0", "fitspatrick_2.0", "fitspatrick_3.0", "fitspatrick_4.0", "fitspatrick_5.0", "fitspatrick_6.0"]:
-		for i in range(len(df_meta)):
-			if df_meta.at[i,fits] == 1:
-				df_meta.at[i,"fitspatrick_index"] = " " + fits
-	
-	# Process body region information			
-	df_meta["cancer_region"] = " No region available."		
-	for regs in ["region_ARM", "region_NECK", "region_FACE", "region_HAND", "region_FOREARM", "region_CHEST", "region_NOSE", "region_THIGH", "region_SCALP", "region_EAR", "region_BACK", "region_FOOT", "region_ABDOMEN", "region_LIP"]:
-		for i in range(len(df_meta)):
-			if df_meta.at[i,regs] == 1:
-				df_meta.at[i,"cancer_region"] = " Lesion located in the region of the " + regs.split("_")[1] + "."
+    # Process Fitzpatrick skin type
+    df_meta["fitspatrick_index"] = " No fitspatrick available."
+    for fits in ["fitspatrick_1.0", "fitspatrick_2.0", "fitspatrick_3.0", "fitspatrick_4.0", "fitspatrick_5.0", "fitspatrick_6.0"]:
+        for i in range(len(df_meta)):
+            if df_meta.at[i,fits] == 1:
+                df_meta.at[i,"fitspatrick_index"] = " " + fits
+    
+    # Process body region information            
+    df_meta["cancer_region"] = " No region available."        
+    for regs in ["region_ARM", "region_NECK", "region_FACE", "region_HAND", "region_FOREARM", "region_CHEST", "region_NOSE", "region_THIGH", "region_SCALP", "region_EAR", "region_BACK", "region_FOOT", "region_ABDOMEN", "region_LIP"]:
+        for i in range(len(df_meta)):
+            if df_meta.at[i,regs] == 1:
+                df_meta.at[i,"cancer_region"] = " Lesion located in the region of the " + regs.split("_")[1] + "."
 
-	# Process symptom indicators
-	df_meta.loc[df_meta["itch_True"] == 1, "itch_True"] = " The lesion itches."
-	df_meta.loc[df_meta["itch_True"] == 0, "itch_True"] = " The lesion does not itch."
+    # Process symptom indicators
+    df_meta.loc[df_meta["itch_True"] == 1, "itch_True"] = " The lesion itches."
+    df_meta.loc[df_meta["itch_True"] == 0, "itch_True"] = " The lesion does not itch."
 
-	df_meta.loc[df_meta["grew_True"] == 1, "grew_True"] = " The lesion has grown."
-	df_meta.loc[df_meta["grew_True"] == 0, "grew_True"] = " The lesion did not grow."
+    df_meta.loc[df_meta["grew_True"] == 1, "grew_True"] = " The lesion has grown."
+    df_meta.loc[df_meta["grew_True"] == 0, "grew_True"] = " The lesion did not grow."
 
-	df_meta.loc[df_meta["hurt_True"] == 1, "hurt_True"] = " The lesion hurts."
-	df_meta.loc[df_meta["hurt_True"] == 0, "hurt_True"] = " The lesion does not hurt."
+    df_meta.loc[df_meta["hurt_True"] == 1, "hurt_True"] = " The lesion hurts."
+    df_meta.loc[df_meta["hurt_True"] == 0, "hurt_True"] = " The lesion does not hurt."
 
-	df_meta.loc[df_meta["changed_True"] == 1, "changed_True"] = " The lesion has changed over time."
-	df_meta.loc[df_meta["changed_True"] == 0, "changed_True"] = " The lesion did not change."
+    df_meta.loc[df_meta["changed_True"] == 1, "changed_True"] = " The lesion has changed over time."
+    df_meta.loc[df_meta["changed_True"] == 0, "changed_True"] = " The lesion did not change."
 
-	df_meta.loc[df_meta["bleed_True"] == 1, "bleed_True"] = " The lesion bleeds."
-	df_meta.loc[df_meta["bleed_True"] == 0, "bleed_True"] = " The lesion does not bleed."
+    df_meta.loc[df_meta["bleed_True"] == 1, "bleed_True"] = " The lesion bleeds."
+    df_meta.loc[df_meta["bleed_True"] == 0, "bleed_True"] = " The lesion does not bleed."
 
-	df_meta.loc[df_meta["elevation_True"] == 1, "elevation_True"] = " The lesion presents elevation."
-	df_meta.loc[df_meta["elevation_True"] == 0, "elevation_True"] = " The lesion does not present elevation."
-	
-	# Combine all features into text descriptions
-	for i in range(len(df)):
-	  # Match patient and lesion IDs
-	  for j in range(len(df_meta)):
-	    if ((str(df.iloc[i]["file_path"].split('_')[1]) == str(df_meta.iloc[j]["patient_id"].split('_')[1])) and (str(df.iloc[i]["file_path"].split('_')[2]) == str(df_meta.iloc[j]["lesion_id"]))):
-	      # Create comprehensive text description
-	      df.at[i,"text"] = "Age of " + str(df_meta.iloc[j]["age"]) + "." + str(df_meta.iloc[j]["gender_FEMALE"]) + str(df_meta.iloc[j]["skin_cancer_history_True"]) + str(df_meta.iloc[j]["cancer_history_True"]) + str(df_meta.iloc[j]["fitspatrick_index"]) + str(df_meta.iloc[j]["cancer_region"]) + str(df_meta.iloc[j]["itch_True"]) + str(df_meta.iloc[j]["grew_True"]) + str(df_meta.iloc[j]["hurt_True"]) + str(df_meta.iloc[j]["changed_True"]) + str(df_meta.iloc[j]["bleed_True"]) + str(df_meta.iloc[j]["elevation_True"])
-	      df.at[i,"diagnostics"] = str(df_meta.iloc[j]["diagnostic"])
-	      df.at[i,"diagnostics_class"] = str(df_meta.iloc[j]["diagnostic"])
-	      
-	# Convert diagnostic labels to numeric values
-	# Note: This mapping should be consistent across train and test sets
-	df.loc[df["diagnostics"] == "NEV", "diagnostics"] = 0  # Nevus
-	df.loc[df["diagnostics"] == "BCC", "diagnostics"] = 1  # Basal Cell Carcinoma
-	df.loc[df["diagnostics"] == "ACK", "diagnostics"] = 2  # Actinic Keratosis
-	df.loc[df["diagnostics"] == "SEK", "diagnostics"] = 3  # Seborrheic Keratosis
-	df.loc[df["diagnostics"] == "SCC", "diagnostics"] = 4  # Squamous Cell Carcinoma
-	df.loc[df["diagnostics"] == "BOD", "diagnostics"] = 4  # Bowenoid (mapped to SCC)
-	df.loc[df["diagnostics"] == "MEL", "diagnostics"] = 5  # Melanoma
-	
-	return(df)  
+    df_meta.loc[df_meta["elevation_True"] == 1, "elevation_True"] = " The lesion presents elevation."
+    df_meta.loc[df_meta["elevation_True"] == 0, "elevation_True"] = " The lesion does not present elevation."
+    
+    # Combine all features into text descriptions
+    for i in range(len(df)):
+        # Match patient and lesion IDs
+        for j in range(len(df_meta)):
+            if ((str(df.iloc[i]["file_path"].split('_')[1]) == str(df_meta.iloc[j]["patient_id"].split('_')[1])) and 
+                (str(df.iloc[i]["file_path"].split('_')[2]) == str(df_meta.iloc[j]["lesion_id"]))):
+                # Create comprehensive text description
+                df.at[i,"text"] = (
+                    "Age of " + str(df_meta.iloc[j]["age"]) + "." +
+                    str(df_meta.iloc[j]["gender_FEMALE"]) +
+                    str(df_meta.iloc[j]["skin_cancer_history_True"]) +
+                    str(df_meta.iloc[j]["cancer_history_True"]) +
+                    str(df_meta.iloc[j]["fitspatrick_index"]) +
+                    str(df_meta.iloc[j]["cancer_region"]) +
+                    str(df_meta.iloc[j]["itch_True"]) +
+                    str(df_meta.iloc[j]["grew_True"]) +
+                    str(df_meta.iloc[j]["hurt_True"]) +
+                    str(df_meta.iloc[j]["changed_True"]) +
+                    str(df_meta.iloc[j]["bleed_True"]) +
+                    str(df_meta.iloc[j]["elevation_True"])
+                )
+                df.at[i,"diagnostics"] = str(df_meta.iloc[j]["diagnostic"])
+                df.at[i,"diagnostics_class"] = str(df_meta.iloc[j]["diagnostic"])
+    
+    # Convert diagnostic labels to numeric values
+    df.loc[df["diagnostics"] == "NEV", "diagnostics"] = 0  # Nevus
+    df.loc[df["diagnostics"] == "BCC", "diagnostics"] = 1  # Basal Cell Carcinoma
+    df.loc[df["diagnostics"] == "ACK", "diagnostics"] = 2  # Actinic Keratosis
+    df.loc[df["diagnostics"] == "SEK", "diagnostics"] = 3  # Seborrheic Keratosis
+    df.loc[df["diagnostics"] == "SCC", "diagnostics"] = 4  # Squamous Cell Carcinoma
+    df.loc[df["diagnostics"] == "BOD", "diagnostics"] = 4  # Bowenoid (mapped to SCC)
+    df.loc[df["diagnostics"] == "MEL", "diagnostics"] = 5  # Melanoma
+    
+    return df
 
 # ISIC19 Processing
 
 def process_metadata_frame_isic(df_meta):
-	"""
-	Process ISIC19 metadata into a format suitable for training.
-	Similar to PAD-UFES-20 but with different feature structure.
-	"""
-	#create the data frame
-	df = pd.DataFrame()
-	df["file_path"] = list(df_meta["img_id"])
-	df["folder"] = list(df_meta["folder"])
-	
-	# Convert to JPEG extension
-	for i in range(len(df)):
-		df.at[i,"file_path"] = str(df.iloc[i]["file_path"]) + ".jpg"
-	
-	# Initialize columns
-	df["text"] = "empty"
-	df["diagnostics_class"] = df_meta["diagnostic"]
-	df["age"] = df_meta["age"]
-	df["diagnostics"] = df_meta["diagnostic_number"]
+    """
+    Process ISIC19 metadata into a format suitable for training.
+    Similar to PAD-UFES-20 but with different feature structure.
+    
+    Args:
+        df_meta: raw metadata DataFrame
+    
+    Returns:
+        df: processed DataFrame with file_path, text descriptions, and diagnostic labels
+    """
+    # Create the data frame
+    df = pd.DataFrame()
+    df["file_path"] = list(df_meta["img_id"])
+    df["folder"] = list(df_meta["folder"])
+    
+    # Convert to JPEG extension
+    for i in range(len(df)):
+        df.at[i,"file_path"] = str(df.iloc[i]["file_path"]) + ".jpg"
+    
+    # Initialize columns
+    df["text"] = "empty"
+    df["diagnostics_class"] = df_meta["diagnostic"]
+    df["age"] = df_meta["age"]
+    df["diagnostics"] = df_meta["diagnostic_number"]
      
-	# Copy region and gender columns
-	for regs in ["region_anterior torso", "region_upper extremity", "region_posterior torso", "region_lower extremity", "region_lateral torso", "region_head/neck", "region_palms/soles", "region_oral/genital"]:
-		df[regs] = df_meta[regs]
+    # Copy region and gender columns
+    for regs in ["region_anterior torso", "region_upper extremity", "region_posterior torso", 
+                 "region_lower extremity", "region_lateral torso", "region_head/neck", 
+                 "region_palms/soles", "region_oral/genital"]:
+        df[regs] = df_meta[regs]
           
-	for genders in ["gender_male", "gender_female"]:
-		df[genders] = df_meta[genders]  # Fixed: Changed from df_meta[regs] to df_meta[genders]
+    for gender in ["gender_male", "gender_female"]:
+        df[gender] = df_meta[gender]
 
-	# Process region information
-	df["region"] = " No region available."		
-	for regs in ["region_anterior torso", "region_upper extremity", "region_posterior torso", "region_lower extremity", "region_lateral torso", "region_head/neck", "region_palms/soles", "region_oral/genital"]:
-		for i in range(len(df)):
-			if df.at[i,regs] == 1:
-				df.at[i,"region"] = " Lesion located in the region of the " + regs.split("_")[1] + "."
+    # Process region information
+    df["region"] = " No region available."        
+    for regs in ["region_anterior torso", "region_upper extremity", "region_posterior torso", 
+                 "region_lower extremity", "region_lateral torso", "region_head/neck", 
+                 "region_palms/soles", "region_oral/genital"]:
+        for i in range(len(df)):
+            if df.at[i,regs] == 1:
+                df.at[i,"region"] = " Lesion located in the region of the " + regs.split("_")[1] + "."
  
-	# Create text descriptions
-	for i in range(len(df)):
-            # Process gender
-            if df.iloc[i, df.columns.get_loc("gender_female")] == 0 and df.iloc[i, df.columns.get_loc("gender_male")] == 1:
-                 gender =  " The subject is a male."
-            elif df.iloc[i, df.columns.get_loc("gender_female")] == 1 and df.iloc[i, df.columns.get_loc("gender_male")] == 0:
-                 gender =  " The subject is a female."
-            else:
-                 gender =  " No gender available."
-            
-            # Process age
-            if (df.iloc[i, df.columns.get_loc("age")]) == 0:
-                 age = "Age not available."
-            else:
-                 age = "Age of " + str(int(df.iloc[i]["age"])) + "."
-            
-            # Combine features
-            df.at[i,"text"] = age + str(df.iloc[i, df.columns.get_loc("region")]) + gender
-	      
-	# Drop temporary columns
-	df = df.drop(columns=["region_anterior torso", "region_upper extremity", "region_posterior torso", "region_lower extremity", "region_lateral torso", "region_head/neck", "region_palms/soles", "region_oral/genital", "age", "gender_female", "gender_male"])
-	
-	return(df)  
+    # Create text descriptions
+    for i in range(len(df)):
+        # Process gender
+        if df.iloc[i]["gender_female"] == 0 and df.iloc[i]["gender_male"] == 1:
+            gender = " The subject is a male."
+        elif df.iloc[i]["gender_female"] == 1 and df.iloc[i]["gender_male"] == 0:
+            gender = " The subject is a female."
+        else:
+            gender = " No gender available."
+        
+        # Process age
+        age = df.iloc[i]["age"]
+        age_text = "Age not available." if age == 0 else f"Age of {int(age)}."
+        
+        # Combine features
+        df.at[i,"text"] = age_text + df.iloc[i]["region"] + gender
+    
+    # Drop temporary columns
+    columns_to_drop = (
+        ["region_anterior torso", "region_upper extremity", "region_posterior torso",
+         "region_lower extremity", "region_lateral torso", "region_head/neck",
+         "region_palms/soles", "region_oral/genital", "age", "gender_female", "gender_male"]
+    )
+    df = df.drop(columns=columns_to_drop)
+    
+    return df
 
 
 ################################################################################################################################################################################################################
@@ -331,17 +362,15 @@ def process_data(Dataset, dataset_name):
                 end = len(Dataset.dataset.images) 
             print(start)
             print(end)
-  else:              
-    
-    #for the PAD-UFES-20 dataset
-    input_trans = (trans_transform([np.array(Image.open(x).convert('RGB')) for x in Dataset.dataset.images], return_tensors='pt'))['pixel_values'].squeeze()
-    l = []
-    input_text = list(feature_extractor_text(list(Dataset.dataset.text), return_tensors="pt"))
-    for i in range(len(input_text)):
-        l.append(torch.from_numpy(input_text[i][0].numpy().mean(axis=0)))
-    yb = torch.tensor((Dataset.dataset.labels[:]).to_numpy(dtype=np.float64))
-    
-  return(input_trans, torch.stack(l), yb)	
+    else:
+        # for the PAD-UFES-20 dataset
+        input_trans = (trans_transform([np.array(Image.open(x).convert('RGB')) for x in Dataset.dataset.images], return_tensors='pt'))['pixel_values'].squeeze()
+        l = []
+        input_text = list(feature_extractor_text(list(Dataset.dataset.text), return_tensors="pt"))
+        for i in range(len(input_text)):
+            l.append(torch.from_numpy(input_text[i][0].numpy().mean(axis=0)))
+        yb = torch.tensor((Dataset.dataset.labels[:]).to_numpy(dtype=np.float64))
+    return(input_trans, torch.stack(l), yb)
 
 def process_data_2(Dataset):
     """
