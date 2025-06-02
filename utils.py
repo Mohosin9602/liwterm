@@ -256,16 +256,16 @@ def to_device(data, device):
         return [to_device(x, device) for x in data]
     return data.to(device, non_blocking=True)
 
-class DeviceDataLoader():
-    def __init__(self, dl, device) -> None:
+class DeviceDataLoader:
+    def __init__(self, dl, device):
         self.dl = dl
         self.device = device
-
+        self.dataset = dl.dataset  # Add this line to expose the dataset
+        
     def __iter__(self):
         for b in self.dl:
-            # yield only execuate when the function is called
-            yield to_device(b, self. device)
-
+            yield to_device(b, self.device)
+            
     def __len__(self):
         return len(self.dl)
 
@@ -282,6 +282,16 @@ def accuracy(predictions, labels):
 def set_params(model):
 	params = [param for param in list(model.parameters()) if param.requires_grad]
 	optimizer = torch.optim.SGD(params, lr=1e-3, momentum=0.2)
+
+    # LR SCHEDULER WASNT HERE, COPILOT SUGGESTED IT     ########################################################################################################################################################
+	lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+	    optimizer,
+	    mode='min',
+	    factor=0.1,
+	    patience=4,
+	    min_lr=1e-6
+	)
+	return optimizer, lr_scheduler
 	#optimizer = torch.optim.Adam(params, lr=1e-3)
 	lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
 	    optimizer,
@@ -289,7 +299,7 @@ def set_params(model):
 	    factor=0.1,
 	    patience=4,
 	    min_lr = 1e-6,
-	    # verbose=True # eta error dekhay
+	    # verbose=True # commenting this line to avoid the error
         )
 	return(optimizer, lr_scheduler)
 

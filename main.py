@@ -15,7 +15,7 @@ import argparse
 from transformers import ViTFeatureExtractor, ViTImageProcessor, ViTModel, ViTConfig
 from torch.utils.data import DataLoader
 from datasets import Dataset
-from utils import process_metadata_frame, customDataset, process_data, set_params, process_metadata_frame_isic
+from utils import process_metadata_frame, customDataset, process_data, set_params, process_metadata_frame_isic, get_default_device, DeviceDataLoader
 from models.vit import vit_model
 from models.bert import bert_model
 from models.liwterm import model_final
@@ -112,7 +112,7 @@ test_ds = customDataset(df_test, trans_transform=trans_transform)
 test_dl = DataLoader(test_ds, batch_size=16, shuffle=True)
 test_dl = DeviceDataLoader(test_dl, device)  # Move data to GPU###################################################
 
-print(test_dl.dataset.labels)
+# print(test_dl.dataset.labels) # ai written, DeviceDataLoader does not have attribute 'dataset' directly, it wraps a DataLoader
 
 #ViT model
 model_trans_top, trans_layer_norm = vit_model(vit_weights_version)
