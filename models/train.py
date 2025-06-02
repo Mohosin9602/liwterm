@@ -26,8 +26,16 @@ def fit(epochs, model, train_dl, optimizer, lr_scheduler, batch_num, dataset_nam
     patience = 50
     path = "sample_data/checkpoints/" # user_defined path to save model
     
+    # Get device from model
+    device = next(model.parameters()).device  # GPUUUU
+    
     print("Calculating the features...")
     image_input,text_input,label = process_data(train_dl, dataset_name)
+    
+    # Move tensors to device
+    image_input = image_input.to(device) #GPUUUU
+    text_input = text_input.to(device) #GPUUUU
+    label = label.to(device) #GPUUUU
     
     print("Feature sizes: ViT({}); pipeline({}); labels({}).".format(image_input.size(), text_input.size(), label.size()))
     
@@ -69,7 +77,11 @@ def fit(epochs, model, train_dl, optimizer, lr_scheduler, batch_num, dataset_nam
             l_image_input = torch.stack(l_image_input)
             l_text_input_ids = torch.stack(l_text_input_ids)
             l_labels = torch.stack(l_labels)
-
+            
+            # Move batch tensors to device
+            l_image_input = l_image_input.to(device) # FOR WARNING
+            l_text_input_ids = l_text_input_ids.to(device) # FOR WARNING
+            l_labels = l_labels.to(device) # FOR WARNING
             
             preds = model(l_image_input, l_text_input_ids.to(torch.float32), model_config)
             loss = loss_func(preds,l_labels)

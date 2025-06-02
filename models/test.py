@@ -44,9 +44,19 @@ def test_partial(model, test_data, batch_num, model_config):
     loss_func = nn.CrossEntropyLoss()
     out_labels = []
     out_preds = []
+    
+    # Get device from model
+    device = next(model.parameters()).device #GPUUUU
+    
     with torch.no_grad():
 
       image_input,text_input,target = process_data(test_data, model_config)
+      
+      # Move tensors to device
+      image_input = image_input.to(device) #GPUUUU
+      text_input = text_input.to(device) #GPUUUU
+      target = target.to(device) #GPUUUU
+      
       overall_acc = 0
       n_batches = int(int(target.size(dim=0))/batch_num)
       print("\n N of batches = {}\n".format(n_batches))
@@ -66,6 +76,12 @@ def test_partial(model, test_data, batch_num, model_config):
         l_image_input = torch.stack(l_image_input)
         l_text_input_ids = torch.stack(l_text_input_ids)
         l_target = torch.stack(l_target)
+        
+        # Move batch tensors to device
+        l_image_input = l_image_input.to(device) #GPUUUU
+        l_text_input_ids = l_text_input_ids.to(device) #GPUUUU
+        l_target = l_target.to(device) #GPUUUU
+        
         starting_time = time.time()
         output = model(l_image_input, l_text_input_ids.to(torch.float32), model_config)
         #pred = output.argmax(1, keepdim=True)

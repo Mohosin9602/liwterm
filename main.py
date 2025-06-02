@@ -122,7 +122,11 @@ print(model_trans_top)
 model = model_final(model_trans_top, trans_layer_norm, n_classes, dp_rate = 0.3)
 # model.load_state_dict(torch.load('model_weights_1228'))
 
+# Move model to GPU
+model = model.to(device) #GPUUUU
+
 print(model)
+print(f"Model is on device: {next(model.parameters()).device}")  # Debug: confirm model is on GPU #GPUUUU
  
 # Define optimizer and learning_rate scheduler
 optimizer, lr_scheduler = set_params(model)

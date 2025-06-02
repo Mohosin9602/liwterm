@@ -5,7 +5,7 @@ import torch
 import tiktoken
 
 from PIL import Image, ImageFile
-from datasets import Dataset
+from torch.utils.data import Dataset # FOR WARNING
 from transformers import ViTFeatureExtractor, ViTImageProcessor, ViTModel, ViTConfig, AutoConfig, AutoTokenizer, AutoModel, BertModel, AutoModelForSequenceClassification, pipeline
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -22,33 +22,22 @@ class customDataset(Dataset):
         self.text = dataframe["text"]
         self.trans_transform = trans_transform
 
-    def __len__ (self):
+    def __len__(self):
         return len(self.labels)
-    '''
+    
     def __getitem__(self, idx):
-
-        img_path = self.images[idx]
-        tmp = []
-        print(idx)
-        for i in (idx):
-          #print(img_path[i])
-          image = Image.open(img_path[i]).convert('RGB')
-          image_trans = self.trans_transform(np.array(image), return_tensors='pt')
-          image_trans = image_trans['pixel_values'].squeeze()
-          tmp.append(image_trans)
-
-        img_trans_out = pd.Series(tmp, index = idx)
-        #print(tmp)
-
-        print(type(img_trans_out))
-        text = self.text[idx]
-        print(type(text))
-
-        label = self.labels[idx]
-        print(type(label))
-
-        return img_trans_out, text, label
-     '''
+        # Get the image path, text, and label for this index
+        img_path = self.images.iloc[idx] if hasattr(self.images, 'iloc') else self.images[idx] # FOR WARNING
+        text = self.text.iloc[idx] if hasattr(self.text, 'iloc') else self.text[idx] # FOR WARNING
+        label = self.labels.iloc[idx] if hasattr(self.labels, 'iloc') else self.labels[idx] # FOR WARNING
+        
+        # Load and transform the image if needed
+        if self.trans_transform:
+            image = Image.open(img_path).convert('RGB')
+            # Note: trans_transform will be applied later in process_data
+            # For now, just return the raw data
+        
+        return img_path, text, label
 
 ################################################################################################################################################################################################################
 ####################################################################### Data Processing ########################################################################################################################
