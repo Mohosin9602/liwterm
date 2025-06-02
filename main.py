@@ -45,15 +45,18 @@ trans_version = 'google/vit-large-patch16-224'
 vit_weights_version = 'google/vit-base-patch16-224-in21k'
 
 #dataset definition:
+script_dir = os.path.dirname(os.path.abspath(__file__))
+print("Directory of the current script:", script_dir)
+
 if config['src_dataset'] != "padufes20":
     dataset_path = "data/ISIC19/imgs/"
     metadata_train_path = "data/ISIC19/isic19_parsed_folders.csv"
     metadata_test_path = "data/ISIC19/isic19_parsed_test.csv"
 
 else:
-    dataset_path = "data/imgs/"
-    metadata_train_path = "data/pad-ufes-20_parsed_folders_train.csv"
-    metadata_test_path = "data/pad-ufes-20_parsed_test.csv"
+    dataset_path = script_dir+"/data/imgs/"
+    metadata_train_path = script_dir+"/data/pad-ufes-20_parsed_folders_train.csv"
+    metadata_test_path = script_dir+"/data/pad-ufes-20_parsed_test.csv"
 
 #Load training data
 files = os.listdir(dataset_path)
@@ -97,11 +100,17 @@ print(tuple(df_test["diagnostics"].unique()))
 #This transformation is required for the data loading and dataloader creation
 trans_transform = ViTFeatureExtractor.from_pretrained(trans_version)
 
+# Get the default device (GPU if available, else CPU)#############################################################
+device = get_default_device()#####################################################################################
+print(f"Using device: {device}")##################################################################################
+
 train_ds = customDataset(df, trans_transform=trans_transform)
 train_dl = DataLoader(train_ds, batch_size=16, shuffle=True)
+train_dl = DeviceDataLoader(train_dl, device)  # Move data to GPU#################################################
 
 test_ds = customDataset(df_test, trans_transform=trans_transform)
 test_dl = DataLoader(test_ds, batch_size=16, shuffle=True)
+test_dl = DeviceDataLoader(test_dl, device)  # Move data to GPU###################################################
 
 print(test_dl.dataset.labels)
 

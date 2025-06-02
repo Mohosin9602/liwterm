@@ -289,7 +289,8 @@ def set_params(model):
 	    factor=0.1,
 	    patience=4,
 	    min_lr = 1e-6,
-	    verbose=True)
+	    # verbose=True # eta error dekhay
+        )
 	return(optimizer, lr_scheduler)
 
 batch_num = 24    
